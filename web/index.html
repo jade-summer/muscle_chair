@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macho Support Chair - Live Score</title>
+    <style>
+        /* 見た目を整えるためのCSS */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Teko:wght@700&display=swap');
+
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Roboto Condensed', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background-color: #2a2a2a;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-family: 'Teko', sans-serif;
+            font-size: 6rem;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 40px;
+            color: #f39c12;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px rgba(243, 156, 18, 0.7);
+        }
+        .team { margin-bottom: 30px; }
+        .team-name { font-size: 3rem; font-family: 'Teko', sans-serif; margin-bottom: 10px; }
+        .team-a .team-name { color: #e74c3c; }
+        .team-b .team-name { color: #3498db; }
+        .gauge-container { width: 100%; height: 60px; background-color: #111; border-radius: 30px; overflow: hidden; border: 4px solid #444; }
+        .gauge-bar { height: 100%; width: 0%; border-radius: 30px; transition: width 0.5s ease-in-out; text-align: right; line-height: 60px; font-size: 2rem; font-weight: bold; color: white; padding-right: 20px; box-sizing: border-box; }
+        .team-a .gauge-bar { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+        .team-b .gauge-bar { background: linear-gradient(90deg, #2980b9, #3498db); }
+        .status-text { text-align: center; margin-top: 40px; font-size: 2rem; color: #f1c40f; height: 40px; }
+
+        /* ★★★ 勝ち演出用のスタイル ★★★ */
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .victory-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .winner-text {
+            font-family: 'Teko', sans-serif;
+            font-size: 15vw;
+            color: #fff;
+            text-shadow: 0 0 10px, 0 0 20px, 0 0 40px;
+            transform: scale(0.5);
+            opacity: 0;
+            animation: pop-in 1s 0.5s forwards;
+        }
+        .winner-text.team_a { text-shadow: 0 0 10px #e74c3c, 0 0 20px #e74c3c, 0 0 40px #e74c3c; }
+        .winner-text.team_b { text-shadow: 0 0 10px #3498db, 0 0 20px #3498db, 0 0 40px #3498db; }
+        .wins-text {
+            font-family: 'Teko', sans-serif;
+            font-size: 8vw;
+            color: #f39c12;
+            text-shadow: 0 0 10px #f39c12;
+            transform: scale(0.5);
+            opacity: 0;
+            animation: pop-in 1s 0.8s forwards;
+        }
+        @keyframes pop-in {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        /* 紙吹雪アニメーション */
+        .confetti {
+            width: 15px;
+            height: 15px;
+            background-color: #f00;
+            position: absolute;
+            top: -20px;
+            animation: fall 5s linear infinite;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>LIVE SCORE</h1>
+        <div class="team team-a">
+            <div class="team-name">TEAM A</div>
+            <div class="gauge-container"><div class="gauge-bar" id="team-a-bar">0</div></div>
+        </div>
+        <div class="team team-b">
+            <div class="team-name">TEAM B</div>
+            <div class="gauge-container"><div class="gauge-bar" id="team-b-bar">0</div></div>
+        </div>
+        <div class="status-text" id="status-text">Connecting...</div>
+    </div>
+
+    <div class="victory-overlay" id="victory-overlay">
+        <div class="winner-text" id="winner-text">TEAM A</div>
+        <div class="wins-text">WINS!</div>
+    </div>
+
+
+    <script>
+        // --- 設定項目 ---
+        const API_URL = "http://127.0.0.1:8000/status"; 
+        const WINNING_THRESHOLD = 100;
+
+        // --- HTML要素の取得 ---
+        const teamABar = document.getElementById('team-a-bar');
+        const teamBBar = document.getElementById('team-b-bar');
+        const statusText = document.getElementById('status-text');
+        const victoryOverlay = document.getElementById('victory-overlay');
+        const winnerText = document.getElementById('winner-text');
+
+        let isVictoryShown = false;
+
+        async function updateScores() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                // ゲージの更新は常に行う
+                const teamAPercentage = (data.team_a_gauge / WINNING_THRESHOLD) * 100;
+                teamABar.style.width = `${Math.min(teamAPercentage, 100)}%`;
+                teamABar.innerText = Math.round(data.team_a_gauge);
+
+                const teamBPercentage = (data.team_b_gauge / WINNING_THRESHOLD) * 100;
+                teamBBar.style.width = `${Math.min(teamBPercentage, 100)}%`;
+                teamBBar.innerText = Math.round(data.team_b_gauge);
+
+                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                // 勝利演出のロジックを修正
+                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                
+                const lastWinner = data.last_winner;
+
+                // 1. 勝利の瞬間の処理
+                //    サーバーから勝者情報が送られてきて，かつ，まだ勝利演出が表示されていない場合
+                if (lastWinner && !isVictoryShown) {
+                    showVictoryScreen(lastWinner);
+                    isVictoryShown = true;
+                }
+
+                // 2. 状態表示の更新とリセット
+                if (data.is_cooldown) {
+                    statusText.innerText = "COOL DOWN...";
+                } else {
+                    statusText.innerText = "";
+                    if (isVictoryShown) {
+                        hideVictoryScreen();
+                        isVictoryShown = false;
+                    }
+                }
+
+            } catch (error) {
+                console.error("Could not fetch scores:", error);
+                statusText.innerText = "Connection Error";
+            }
+        }
+
+        function showVictoryScreen(winnerTeam) {
+            winnerText.innerText = winnerTeam === 'team_a' ? 'TEAM A' : 'TEAM B';
+            winnerText.className = 'winner-text';
+            winnerText.classList.add(winnerTeam);
+            victoryOverlay.classList.add('visible');
+            createConfetti();
+        }
+
+        function hideVictoryScreen() {
+            victoryOverlay.classList.remove('visible');
+            const oldConfetti = document.querySelectorAll('.confetti');
+            oldConfetti.forEach(c => c.remove());
+        }
+        
+        function createConfetti() {
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.animationDelay = `${Math.random() * 5}s`;
+                confetti.style.backgroundColor = Math.random() > 0.5 ? '#e74c3c' : '#3498db';
+                document.body.appendChild(confetti);
+            }
+        }
+
+        setInterval(updateScores, 1000);
+        updateScores();
+    </script>
+
+</body>
+</html>
