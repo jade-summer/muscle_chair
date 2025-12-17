@@ -11,12 +11,27 @@
   - systemd service templates
 
 ## Directory Ownership (MUST FOLLOW)
-- `backend/`: Python code for the central server (FastAPI etc.). Place all Python application code here.
+- `backend/`: Python code for the central server (FastAPI etc.).
+  Place all central server–side Python application code here.
 - `device/`: Device-side controllers (Node.js scripts that touch GPIO/I2C/audio). Place input/output controllers here.
 - `web/`: Browser UI assets (HTML/CSS/JS). Keep it deployable as static files.
 - `systemd/`: systemd unit/service files. These are templates; actual deployment copies them to `/etc/systemd/system/`.
 - `scripts/`: helper scripts (start/stop, deployment helpers). systemd should call scripts here.
 - `slide/`: presentation materials. Do not mix with runtime code.
+- `edge/`: Raspberry Pi Zero–side edge processing (Python only).  
+  Handles sensor input and signal processing (e.g., USB microphone → cheer detection).  
+  MUST NOT include UI, scoring logic, or actuator control.
+
+## Edge Device Design Policy
+- Edge devices are responsible only for:
+  - Sensor input (e.g., microphone)
+  - Signal processing and event detection
+- Edge devices are NOT responsible for:
+  - Game rules or scoring
+  - UI rendering
+  - Presentation logic
+
+All interpretation and game integration must be handled by the backend.
 
 ## Placement Rules
 - Do NOT add new runtime code at repository root.
@@ -26,6 +41,17 @@
 ## Device Code Rules (Node.js)
 - Do not commit `node_modules/`.
 - When adding new device dependencies, create/maintain a `package.json` under `device/` (or `device/<subsystem>/`) and document setup steps in README.
+
+## Edge → Backend Interface Rules (MUST FOLLOW)
+- Edge devices (Raspberry Pi Zero) communicate with the central backend via HTTP + JSON only.
+- Raw audio data MUST NOT be transmitted.
+- Edge devices send only:
+  - Numeric cheer level (0–100)
+  - Discrete cheer events (e.g., CHEER_TRIGGER)
+- Recommended sending frequency:
+  - cheer level: 5–10 Hz
+  - events: on occurrence only
+- WebSocket, MQTT, or streaming protocols are not allowed for edge devices.
 
 ## systemd Rules
 - `ExecStart` and `WorkingDirectory` paths in unit files may be environment-dependent.
