@@ -6,12 +6,17 @@ Macho Support Chair - 中央コントローラー (最終リファクタリン�
 一斉に命令を送信するFastAPIサーバ
 """
 
+import asyncio
+import json
 import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import requests
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import Dict, Optional
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field, ValidationError
 
 # ==============================================================================
 # 設定項目 (Configuration)
@@ -53,6 +58,13 @@ class InputData(BaseModel):
     value: int
     team: str
 
+
+class CheerTriggerPayload(BaseModel):
+    team: str
+    event: str
+    level: float = Field(ge=0, le=100)
+    ts: int = Field(ge=0)
+
 # ==============================================================================
 # アプリケーションの状態管理 (Application State)
 # ==============================================================================
@@ -62,6 +74,8 @@ game_state: Dict[str, any] = {
     "last_win_time": 0.0,
     "last_winner": None,
 }
+
+log_subscribers: List[asyncio.Queue] = []
 
 # ==============================================================================
 # FastAPIアプリケーションの初期化 (Application Instance)
@@ -121,9 +135,81 @@ def handle_victory(winner: str):
 
     reset_gauges_after_win()
 
+
+def push_log_event(event_type: str, payload: Dict[str, Any]):
+    """SSEに流すログイベントを生成して配信"""
+    entry = {
+        "type": event_type,
+        "payload": payload,
+        "logged_at": datetime.utcnow().isoformat() + "Z",
+    }
+    print(f"[LOG][{event_type}] {json.dumps(entry, ensure_ascii=False)}")
+    for queue in list(log_subscribers):
+        try:
+            queue.put_nowait(entry)
+        except asyncio.QueueFull:
+            if queue in log_subscribers:
+                log_subscribers.remove(queue)
+
 # ==============================================================================
 # APIエンドポイント (API Endpoints)
 # ==============================================================================
+@app.get("/api/logs/stream", summary="SSEログ配信")
+async def stream_logs(request: Request):
+    """Web UI向けのログストリーム"""
+    queue: asyncio.Queue = asyncio.Queue()
+    log_subscribers.append(queue)
+
+    async def event_generator():
+        try:
+            while True:
+                event = await queue.get()
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                if await request.is_disconnected():
+                    break
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if queue in log_subscribers:
+                log_subscribers.remove(queue)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.post("/api/cheer/trigger", summary="応援トリガーの受信")
+async def cheer_trigger(body: Dict[str, Any] = Body(...)):
+    """エッジ側からの応援トリガーイベントの受信"""
+    required_keys = {"team", "event", "level", "ts"}
+    missing_keys = [key for key in required_keys if key not in body]
+    if missing_keys:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Missing required fields: {', '.join(sorted(missing_keys))}",
+        )
+
+    try:
+        payload = CheerTriggerPayload(**body)
+    except ValidationError as exc:
+        raise HTTPException(status_code=400, detail=exc.errors())
+
+    ts_iso = datetime.utcfromtimestamp(payload.ts / 1000).isoformat() + "Z"
+    log_payload = {
+        "team": payload.team,
+        "event": payload.event,
+        "level": payload.level,
+        "ts": ts_iso,
+        "ts_ms": payload.ts,
+        "received_at": datetime.utcnow().isoformat() + "Z",
+    }
+    print(
+        f"[CHEER_TRIGGER] team={payload.team} event={payload.event} "
+        f"level={payload.level} ts={ts_iso}"
+    )
+    push_log_event("CHEER_TRIGGER", log_payload)
+
+    return {"status": "received"}
+
+
 @app.post("/add_point", summary="センサからポイントを追加")
 async def add_point(data: InputData):
     """入力側のラズパイZeroからイベント報告を受け取り，ゲームロジックを処理"""

@@ -9,12 +9,13 @@ from __future__ import annotations
 import time
 
 from .cheer_detector import CheerDetector
-from .sender import Sender
+from .sender import Sender, HttpTransport
 
 
 def main(iterations: int = 50, delay: float = 0.1) -> None:
     detector = CheerDetector()
-    sender = Sender()
+    transport = HttpTransport("http://127.0.0.1:8000/api/cheer/trigger")
+    sender = Sender(team="A", transport=transport)
     for _ in range(iterations):
         level, event = detector.poll()
         print(f"cheer_level={level:.3f}")
