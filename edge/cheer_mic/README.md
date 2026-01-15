@@ -180,9 +180,23 @@ Common errors:
   - list_audio_devices() utility
   - Standalone testing
 
-- ⏳ **Phase 2**: Integration with CheerDetector (PENDING)
-- ⏳ **Phase 3**: CLI Enhancement (PENDING)
-- ⏳ **Phase 4**: Calibration Tool (PENDING)
+- ✅ **Phase 2**: Integration with CheerDetector (COMPLETED)
+  - `use_real_mic` parameter for CheerDetector
+  - `detector.close()` for proper resource cleanup
+  - Context manager support for automatic cleanup
+  - Backward compatibility with pseudo data mode
+
+- ✅ **Phase 3**: CLI Enhancement (COMPLETED)
+  - argparse CLI: `--team`, `--backend`, `--device`, `--debug`, `--threshold`
+  - Real-time visual feedback with progress bar
+  - Proper resource cleanup with try-except-finally
+  - Graceful KeyboardInterrupt (Ctrl+C) handling
+
+- ✅ **Phase 4**: Calibration Tool (COMPLETED)
+  - Interactive device selection UI
+  - Real-time audio level monitoring (10Hz)
+  - Parameter adjustment commands (sensitivity, noise gate, trigger)
+  - Recommended configuration output in copy-paste format
 
 ## Testing
 
