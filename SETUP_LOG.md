@@ -125,9 +125,122 @@ INFO: 127.0.0.1 - "POST /api/cheer/trigger HTTP/1.1" 200 OK
 
 ---
 
+## 2026-03-10 出力デバイス用ラズパイ Zero セットアップ
+
+### 環境
+| 番号 | 担当デバイス | IP アドレス |
+|------|------------|-----------|
+| 5番 | motor（サーボモーター） | 192.168.11.6 |
+| 6番 | led | 192.168.11.8 |
+| 7番 | speaker | 192.168.11.2 |
+| 8番 | balloon | 192.168.11.9 |
+
+### 共通セットアップ手順（全4台）
+
+#### 1. IP アドレスの固定
+```bash
+sudo tee -a /etc/dhcpcd.conf << 'EOF'
+
+interface wlan0
+static ip_address=<各ラズパイのIP>/24
+static routers=192.168.11.1
+static domain_name_servers=192.168.11.1
+EOF
+```
+
+#### 2. SSH の有効化
+```bash
+sudo systemctl enable ssh
+sudo systemctl start ssh
+```
+
+#### 3. git インストール・リポジトリクローン
+```bash
+sudo apt update && sudo apt install -y git
+git clone https://github.com/jade-summer/muscle_chair.git
+```
+
+#### 4. npm install（全4デバイス分まとめて実行）
+```bash
+cd ~/muscle_chair/device/output/led && npm init -y && npm pkg set type=module && npm install node-web-gpio && cd ../speaker && npm init -y && npm pkg set type=module && npm install node-web-gpio && cd ../balloon && npm init -y && npm pkg set type=module && npm install node-web-gpio && cd ../motor && npm init -y && npm pkg set type=module && npm install node-web-i2c @chirimen/pca9685
+```
+
+#### 5. Python 依存関係のインストール
+```bash
+sudo apt install -y python3-pip
+pip3 install fastapi uvicorn --break-system-packages
+```
+
+#### 6. output_server.py の設定変更
+担当デバイスに応じて `JAVASCRIPT_SCRIPT_NAME` を変更：
+
+| 番号 | 変更後の値 |
+|------|-----------|
+| 5番 | `/home/pi/muscle_chair/device/output/motor/output_motor.js` |
+| 6番 | `/home/pi/muscle_chair/device/output/led/output_led.js` |
+| 7番 | `/home/pi/muscle_chair/device/output/speaker/output_speaker.js` |
+| 8番 | `/home/pi/muscle_chair/device/output/balloon/output_balloon.js` |
+
+```bash
+sed -i 's|JAVASCRIPT_SCRIPT_NAME = "main-isd1820.js"|JAVASCRIPT_SCRIPT_NAME = "/home/pi/muscle_chair/device/output/<デバイス名>/output_<デバイス名>.js"|' ~/muscle_chair/backend/output_server.py
+```
+
+#### 7. start_server.sh の作成
+```bash
+cat > ~/muscle_chair/scripts/start_server.sh << 'EOF'
+#!/bin/bash
+cd /home/pi/muscle_chair/backend
+python3 -m uvicorn output_server:app --host 0.0.0.0 --port 5000
+EOF
+
+chmod +x ~/muscle_chair/scripts/start_server.sh
+```
+
+#### 8. systemd サービス登録
+```bash
+sudo tee /etc/systemd/system/muscle_chair.service << 'EOF'
+[Unit]
+Description=Muscle Chair Output Server
+After=network.target
+
+[Service]
+ExecStart=/home/pi/muscle_chair/scripts/start_server.sh
+WorkingDirectory=/home/pi/muscle_chair/backend
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable muscle_chair
+sudo systemctl start muscle_chair
+sudo systemctl status muscle_chair
+```
+
+### 動作確認
+
+**サーボモーター（5番）手動テスト:**
+```bash
+cd ~/muscle_chair/device/output/motor
+sudo node output_motor.js team_a
+```
+→ サーボモーターの動作を確認 ✅
+
+### 注意事項
+- SSH 接続は WSL からではなく PowerShell から行う（WSL のネットワーク問題）
+- `sudo` はリダイレクト（`>`）に効かないため `sudo tee` を使う
+- CHIRIMEN OS には Node.js v20・npm v10 が同梱済みのため別途インストール不要
+
+---
+
 ## 残作業（全国大会に向けて）
 
+- [ ] ラズパイ 4 のセットアップ（OS・SSH・IP 固定・依存関係インストール）
+- [ ] `main.py` の `OUTPUT_DEVICES` IP アドレス更新・`BROADCAST_MODE = True` に変更
 - [ ] ラズパイ 4（本番バックエンド）との統合テスト
 - [ ] キャリブレーション（会場の環境音に合わせた感度・しきい値調整）
-- [ ] systemd サービス登録（自動起動設定）
-- [ ] 出力デバイス（モーター・LED・スピーカー・風船）との結合テスト
+- [ ] 出力デバイス（モーター・LED・スピーカー・風船）とのエンドツーエンドテスト
