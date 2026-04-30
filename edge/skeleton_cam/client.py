@@ -17,7 +17,7 @@ import websockets
 
 # --- 設定 ---
 ANGLE_DOWN_THRESHOLD = 100  # この角度を下回ったらダウン判定
-ANGLE_UP_THRESHOLD = 160    # この角度を超えたらアップ判定
+ANGLE_UP_THRESHOLD = 160  # この角度を超えたらアップ判定
 
 WEBSOCKET_URI = "ws://xxx.xxx.xxx.xxx:8765"
 BACKEND_URL = "http://127.0.0.1:8000/add_point"
