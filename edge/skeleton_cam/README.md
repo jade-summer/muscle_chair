@@ -37,14 +37,14 @@ The system consists of two main components:
 # System packages
 sudo apt install python3-picamera2 python3-opencv python3-numpy
 
-# Python packages
-pip install websockets mediapipe
+# Python packages（picamera2 は apt でインストール済み）
+pip install -r edge/skeleton_cam/requirements.txt
 ```
 
 ### PC
 
 ```bash
-pip install websockets opencv-python numpy requests
+pip install -r edge/skeleton_cam/requirements.txt
 ```
 
 ## Usage

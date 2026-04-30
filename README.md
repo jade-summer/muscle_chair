@@ -1,5 +1,9 @@
 # Muscle Chair
 
+[![Ruff](https://github.com/jade-summer/muscle_chair/actions/workflows/ruff.yml/badge.svg)](https://github.com/jade-summer/muscle_chair/actions/workflows/ruff.yml)
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-red)](https://www.raspberrypi.com/)
+
 **Web × IoT Makers Challenge PLUS 2025 岡山大会 最優秀賞 / 全国大会 人気投票賞受賞作品**
 
 ## 概要
@@ -188,7 +192,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # 依存関係をインストール
-pip install fastapi uvicorn pydantic requests
+pip install -r backend/requirements.txt
 
 # サーバーを起動
 cd backend
@@ -203,7 +207,7 @@ sudo apt update
 sudo apt install portaudio19-dev python3-pyaudio python3-numpy
 
 # Pythonパッケージをインストール
-pip install pyaudio numpy
+pip install -r edge/cheer_mic/requirements.txt
 
 # USBマイクの接続確認
 arecord -l
@@ -217,27 +221,26 @@ python3 -m edge.cheer_mic.main --team A --backend http://<中央サーバーIP>:
 ```bash
 # Raspberry Pi側（server.py）
 sudo apt install python3-picamera2 python3-opencv python3-numpy
-pip install websockets mediapipe
+pip install -r edge/skeleton_cam/requirements.txt
 
 # サーバーを起動
 python3 -m edge.skeleton_cam.server
 
 # PC側（client.py）—— IPアドレスを編集してから実行
 # client.py の WEBSOCKET_URI を Raspberry Pi の IP に変更
-pip install websockets opencv-python numpy requests
+pip install -r edge/skeleton_cam/requirements.txt
 python3 -m edge.skeleton_cam.client
 ```
 
 ### 出力デバイス（Device）のセットアップ
 
 ```bash
-# Node.jsのセットアップ（Raspberry Pi Zero）
+# Node.jsの依存関係をインストール（例: LED担当の場合）
 cd device/output/led  # または motor/speaker/balloon
-
-# 依存関係をインストール
 npm install
 
-# 出力サーバーを起動
+# リポジトリルートに戻り、出力受信サーバーを起動
+cd ../../..
 cd backend
 uvicorn output_server:app --host 0.0.0.0 --port 5000
 ```
@@ -335,7 +338,9 @@ python3 -m edge.cheer_mic.calibrate
 
 ## ライセンス
 
-このプロジェクトはWeb × IoT Makers Challenge PLUS 2025のハッカソン作品として開発されました。
+[MIT License](LICENSE) — Web × IoT Makers Challenge PLUS 2025 ハッカソン作品
+
+Copyright (c) 2025 jade-summer
 
 ## 謝辞
 

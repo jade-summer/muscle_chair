@@ -19,7 +19,7 @@ The system consists of three main components:
 - **Microphone**: SANWA SUPPLY MM-MCU028K (USB Audio Class compliant)
 - **Platform**: Raspberry Pi Zero 2 W
 - **Connection**: USB Type-A via Micro USB OTG adapter
-- **Quantity**: 2 units (Team A and Team B)
+- **Quantity**: 1 unit (Team A)
 
 ## Software Dependencies
 
@@ -32,6 +32,20 @@ sudo apt install portaudio19-dev python3-pyaudio python3-numpy
 ```
 pyaudio>=0.2.13
 numpy>=1.24.0
+requests>=2.31.0
+```
+
+## Usage
+
+```bash
+# Team A 担当として起動（本番・USB マイク使用）
+python3 -m edge.cheer_mic.main --team A --backend http://<サーバーIP>:8000/api/cheer/trigger
+
+# デバッグモード（マイクなし・疑似データ）
+python3 -m edge.cheer_mic.main --team A --debug
+
+# 利用可能なオーディオデバイスを確認
+python3 -m edge.cheer_mic.usb_mic_detector
 ```
 
 ## USB Microphone Detector
@@ -102,56 +116,6 @@ The default configuration parameters are estimates. Use the calibration tool to 
 - **Noise Gate**: Filter ambient noise threshold
 - **Cheer Trigger**: Level required to emit events
 
-## API Reference
-
-### AudioConfig
-
-Dataclass for audio configuration:
-
-```python
-@dataclass(frozen=True)
-class AudioConfig:
-    sample_rate: int = 16000
-    chunk_size: int = 1024
-    channels: int = 1
-    sensitivity: float = 15.0
-    noise_gate_threshold: float = 0.05
-    smoothing_window_size: int = 3
-    device_index: Optional[int] = None
-```
-
-### USBMicDetector
-
-Real-time audio level detector:
-
-```python
-class USBMicDetector:
-    def __init__(self, config: AudioConfig = AudioConfig()) -> None
-    def start(self) -> None
-    def stop(self) -> None
-    def read_level(self) -> float  # Returns 0.0-1.0
-```
-
-Context manager support:
-```python
-with USBMicDetector(config) as detector:
-    level = detector.read_level()
-```
-
-### list_audio_devices()
-
-Utility function to list available audio input devices:
-
-```python
-def list_audio_devices() -> list[dict[str, any]]
-```
-
-Returns list of devices with:
-- `index`: Device index for PyAudio
-- `name`: Device name
-- `channels`: Max input channels
-- `sample_rate`: Default sample rate
-
 ## Development Notes
 
 ### Resource Management
@@ -195,10 +159,6 @@ arecord -l
 arecord -D plughw:1,0 -f cd -d 5 test.wav
 aplay test.wav
 ```
-
-### WSL2: No Audio Device Found
-
-Ensure WSLg is enabled and PulseAudio is running. Check Windows microphone permissions.
 
 ### High CPU Usage
 
