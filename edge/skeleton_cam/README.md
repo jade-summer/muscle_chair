@@ -105,20 +105,3 @@ BACKEND_URL = "http://127.0.0.1:8000/add_point"
 TEAM = "a"
 ```
 
-## Implementation Status
-
-- ✅ **Phase 1**: Core Streaming (COMPLETED)
-  - Picamera2 video capture
-  - MediaPipe pose estimation
-  - WebSocket streaming (JPEG + angle + mode)
-  - RGB→BGR conversion fix
-
-- ✅ **Phase 2**: Client UI (COMPLETED)
-  - OpenCV window with START / mode-select / training states
-  - Rep counting logic (angle threshold)
-  - Backend point reporting
-
-- 🔲 **Phase 3**: Robustness (TODO)
-  - Reconnection on WebSocket disconnect
-  - Left/right side switching option
-  - Configurable angle thresholds via CLI args

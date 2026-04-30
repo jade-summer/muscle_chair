@@ -96,7 +96,7 @@ This will display real-time audio levels with a visual bar indicator.
 
 ## Calibration
 
-The default configuration parameters are estimates. Use the calibration tool (Phase 4) to determine optimal values for your specific environment:
+The default configuration parameters are estimates. Use the calibration tool to determine optimal values for your specific environment:
 
 - **Sensitivity**: Adjust RMS-to-level conversion
 - **Noise Gate**: Filter ambient noise threshold
@@ -154,10 +154,6 @@ Returns list of devices with:
 
 ## Development Notes
 
-### WSL2 Development
-
-When developing on WSL2, the USB microphone detector can access Windows audio devices via WSLg (PulseAudio). This allows testing without Raspberry Pi hardware.
-
 ### Resource Management
 
 The USBMicDetector properly manages PyAudio resources:
@@ -171,32 +167,6 @@ Common errors:
 - **"Audio stream is not running"**: Call `start()` before `read_level()`
 - **"Failed to open audio stream"**: Check device_index or USB connection
 - **High CPU usage**: Reduce sample_rate or increase chunk_size
-
-## Implementation Status
-
-- ✅ **Phase 1**: Core USB Microphone Module (COMPLETED)
-  - AudioConfig dataclass
-  - USBMicDetector class
-  - list_audio_devices() utility
-  - Standalone testing
-
-- ✅ **Phase 2**: Integration with CheerDetector (COMPLETED)
-  - `use_real_mic` parameter for CheerDetector
-  - `detector.close()` for proper resource cleanup
-  - Context manager support for automatic cleanup
-  - Backward compatibility with pseudo data mode
-
-- ✅ **Phase 3**: CLI Enhancement (COMPLETED)
-  - argparse CLI: `--team`, `--backend`, `--device`, `--debug`, `--threshold`
-  - Real-time visual feedback with progress bar
-  - Proper resource cleanup with try-except-finally
-  - Graceful KeyboardInterrupt (Ctrl+C) handling
-
-- ✅ **Phase 4**: Calibration Tool (COMPLETED)
-  - Interactive device selection UI
-  - Real-time audio level monitoring (10Hz)
-  - Parameter adjustment commands (sensitivity, noise gate, trigger)
-  - Recommended configuration output in copy-paste format
 
 ## Testing
 
