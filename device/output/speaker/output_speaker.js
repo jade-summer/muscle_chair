@@ -1,5 +1,5 @@
 /**
- * Mausle Chair - Output Module (Speaker)
+ * Muscle Chair - Output Module (Speaker)
  * * 中央サーバーからの命令に応じて、GPIO経由で音声再生モジュールを制御し、
  * 勝利のファンファーレなどを再生するスクリプト。
  */

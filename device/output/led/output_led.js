@@ -1,5 +1,5 @@
 /**
- * Mausle Chair - Output Module (LED Decoration)
+ * Muscle Chair - Output Module (LED Decoration)
  * * 中央サーバーからの命令に応じて、指定されたパターンのLED点滅演出を実行するスクリプト。
  * 勝利チームによって、点滅の速度や回数が変化します。
  */
@@ -46,7 +46,6 @@ const CONFIG = {
  * @returns {string} 勝者チーム名 ('team_a', 'team_b', 'default')
  */
 function getWinnerFromArgs() {
-    // process.argv[2] に最初のコマンドライン引数が入ります
     const winnerArg = process.argv[2];
     if (winnerArg === 'team_a' || winnerArg === 'team_b') {
         return winnerArg;

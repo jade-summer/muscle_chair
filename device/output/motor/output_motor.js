@@ -1,5 +1,5 @@
 /**
- * Mausle Chair - Output Module (Servo Motor)
+ * Muscle Chair - Output Module (Servo Motor)
  * * 中央サーバーからの命令に応じて、PCA9685経由でサーボモーターを制御し、
  * 物理的な演出（アーム展開など）を実行するスクリプト。
  */

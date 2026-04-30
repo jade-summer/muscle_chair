@@ -39,7 +39,8 @@ async def receive_trigger_from_main_server(data: WinnerData):
     """
     中央サーバーからの命令を受け取り、指定されたJSスクリプトを実行する。
     """
-    winner_team = data.winner or "default"
+    VALID_WINNERS = {"team_a", "team_b", "default"}
+    winner_team = data.winner if data.winner in VALID_WINNERS else "default"
     print(f"\n[Python] 中央サーバーから命令受信！ 勝者: {winner_team}")
     print(f"[Python] 実行部隊 ({JAVASCRIPT_SCRIPT_NAME}) を呼び出します...")
 

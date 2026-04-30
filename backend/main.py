@@ -1,5 +1,5 @@
 """
-Macho Support Chair - 中央コントローラー (最終リファクタリング版)
+Muscle Chair - 中央コントローラー (最終リファクタリング版)
 
 入力側の各種センサからのイベント報告を集約かつ応援合戦のゲームロジックを管理し，
 勝利条件が満たされた際に、登録されている全ての出力側ラズパイZeroに
@@ -43,7 +43,7 @@ WINNING_THRESHOLD: int = 100
 COOLDOWN_SECONDS: int = 10
 POINT_MAPPING: Dict[str, float] = {
     "pushup_sensor": 10.0,
-    "microphone_cheer": 1.0,
+    "microphone_cheer": 1.0,  # /api/cheer/trigger はログのみ。/add_point経由では未使用（将来の拡張用）
     "bicycle_sensor": 0.5,
     "gps_run": 0.2,
 }
@@ -75,7 +75,7 @@ log_subscribers: List[asyncio.Queue] = []
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
-    title="Macho Support Chair Controller",
+    title="Muscle Chair Controller",
     description="各種センサからの入力を集計し，応援合戦を管理する中央サーバです．",
 )
 
@@ -83,7 +83,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

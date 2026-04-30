@@ -1,5 +1,5 @@
 /**
- * Mausle Chair - Output Module (Balloon Fan)
+ * Muscle Chair - Output Module (Balloon Fan)
  * * 中央サーバーからの命令に応じて、GPIO経由でファンを制御し、
  * 筋肉風船を膨らませる演出を実行するスクリプト。
  */

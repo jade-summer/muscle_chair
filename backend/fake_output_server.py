@@ -1,5 +1,5 @@
 """
-Fake Output Server for Macho Support Chair
+Fake Output Server for Muscle Chair
 
 このスクリプトは，中央コントローラー(main.py)のデバッグを目的とした，
 出力側ラズパイZeroのダミー（偽物）サーバ

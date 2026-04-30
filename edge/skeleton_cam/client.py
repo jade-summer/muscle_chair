@@ -16,6 +16,9 @@ import requests
 import websockets
 
 # --- 設定 ---
+ANGLE_DOWN_THRESHOLD = 100  # この角度を下回ったらダウン判定
+ANGLE_UP_THRESHOLD = 160    # この角度を超えたらアップ判定
+
 WEBSOCKET_URI = "ws://xxx.xxx.xxx.xxx:8765"
 BACKEND_URL = "http://127.0.0.1:8000/add_point"
 TEAM = "a"
@@ -119,11 +122,11 @@ async def receive_video():
                 await websocket.send(json.dumps({"mode": selected_mode}))
 
                 # 筋トレ判定ロジック
-                if angle < 100 and stage == "UP":
+                if angle < ANGLE_DOWN_THRESHOLD and stage == "UP":
                     stage = "DOWN"
                     print("DOWN!")
 
-                if angle > 160 and stage == "DOWN":
+                if angle > ANGLE_UP_THRESHOLD and stage == "DOWN":
                     stage = "UP"
                     counter += 1
                     print(f"UP! 回数: {counter}")
