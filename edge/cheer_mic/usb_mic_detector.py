@@ -4,6 +4,7 @@ This module provides real-time audio level detection using PyAudio to capture
 audio from USB microphones. It calculates RMS (Root Mean Square) volume,
 applies noise gating and smoothing, then normalizes to a 0.0-1.0 range.
 """
+
 from __future__ import annotations
 
 import sys
@@ -188,7 +189,9 @@ class USBMicDetector:
             raise RuntimeError("Audio stream is not running. Call start() first.")
 
         # Read audio data from stream
-        audio_data = self._stream.read(self._config.chunk_size, exception_on_overflow=False)
+        audio_data = self._stream.read(
+            self._config.chunk_size, exception_on_overflow=False
+        )
 
         # Calculate RMS volume
         rms = self._calculate_rms(audio_data)

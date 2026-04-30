@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 
+
 # ==============================================================================
 # Pydanticモデル定義 (Data Models)
 # ==============================================================================
@@ -21,13 +22,15 @@ from typing import Optional
 class WinnerData(BaseModel):
     winner: Optional[str] = None
 
+
 # ==============================================================================
 # FastAPIアプリケーションの初期化 (Application Instance)
 # ==============================================================================
 app = FastAPI(
     title="Fake Output Server",
-    description="中央コントローラーからの命令受信をシミュレートするダミーサーバーです．"
+    description="中央コントローラーからの命令受信をシミュレートするダミーサーバーです．",
 )
+
 
 # ==============================================================================
 # APIエンドポイント (API Endpoints)
@@ -38,15 +41,13 @@ async def receive_trigger_from_main_server(data: WinnerData):
     中央コントローラーからの命令を受け取るためのダミーのエンドポイント
     リクエストを受け取ったら，成功メッセージをコンソールに表示するだけ
     """
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("      🎉🎉🎉 成功！中央サーバーから命令を受信しました！ 🎉🎉🎉")
     print(f"      勝者チーム: {data.winner}")
-    print("="*50 + "\n")
-    
-    return {
-        "status": "ok",
-        "message": "Command successfully received by fake server."
-    }
+    print("=" * 50 + "\n")
+
+    return {"status": "ok", "message": "Command successfully received by fake server."}
+
 
 # ==============================================================================
 # サーバ起動コマンド

@@ -3,6 +3,7 @@
 This tool helps users determine optimal values for sensitivity, noise gate,
 and trigger threshold by providing real-time visual feedback.
 """
+
 from __future__ import annotations
 
 import sys
@@ -234,17 +235,13 @@ def process_command(command: str, state: CalibrationState) -> CalibrationState:
     elif command == "t":
         # Increase trigger threshold
         new_trigger = min(1.0, state.trigger_threshold + state.threshold_step)
-        print(
-            f"Increased trigger: {state.trigger_threshold:.2f} → {new_trigger:.2f}"
-        )
+        print(f"Increased trigger: {state.trigger_threshold:.2f} → {new_trigger:.2f}")
         return replace(state, trigger_threshold=new_trigger)
 
     elif command == "T":
         # Decrease trigger threshold
         new_trigger = max(0.0, state.trigger_threshold - state.threshold_step)
-        print(
-            f"Decreased trigger: {state.trigger_threshold:.2f} → {new_trigger:.2f}"
-        )
+        print(f"Decreased trigger: {state.trigger_threshold:.2f} → {new_trigger:.2f}")
         return replace(state, trigger_threshold=new_trigger)
 
     elif command == "r":
@@ -336,7 +333,9 @@ def main() -> None:
         devices = list_audio_devices()
         device_info = next((d for d in devices if d["index"] == device_index), None)
         device_name = (
-            f"[{device_index}] {device_info['name']}" if device_info else f"[{device_index}]"
+            f"[{device_index}] {device_info['name']}"
+            if device_info
+            else f"[{device_index}]"
         )
     else:
         device_name = "Default"
@@ -372,7 +371,9 @@ def main() -> None:
             display_statistics(max_level, avg_level, trigger_count)
 
             # Prompt for command
-            print("Commands: s/S=sensitivity, g/G=gate, t/T=trigger, r=reset, h=help, q=quit")
+            print(
+                "Commands: s/S=sensitivity, g/G=gate, t/T=trigger, r=reset, h=help, q=quit"
+            )
             command = input("Enter command: ").strip()
 
             if command == "q":
@@ -389,6 +390,7 @@ def main() -> None:
     except Exception as e:
         print(f"\n\nError during calibration: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

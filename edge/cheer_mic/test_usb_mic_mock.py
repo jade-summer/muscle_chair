@@ -2,22 +2,26 @@
 
 This demonstrates the module works correctly with simulated audio data.
 """
+
 from unittest.mock import MagicMock, patch
 import sys
 
 # Mock the dependencies before import
-sys.modules['pyaudio'] = MagicMock()
-sys.modules['numpy'] = MagicMock()
+sys.modules["pyaudio"] = MagicMock()
+sys.modules["numpy"] = MagicMock()
 
 # Configure numpy mock to behave like the real thing for our use case
 import numpy as np  # noqa: E402
-np.frombuffer = lambda data, dtype: MagicMock(astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024))
+
+np.frombuffer = lambda data, dtype: MagicMock(
+    astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024)
+)
 np.mean = lambda x: 10000.0
 np.sqrt = lambda x: 100.0
 np.int16 = int
 np.float32 = float
 
-from usb_mic_detector import AudioConfig, USBMicDetector, list_audio_devices    # noqa: E402
+from usb_mic_detector import AudioConfig, USBMicDetector, list_audio_devices  # noqa: E402
 
 
 def test_audio_config():
@@ -36,11 +40,7 @@ def test_audio_config():
     print("  ✓ Default configuration OK")
 
     # Custom config
-    custom_config = AudioConfig(
-        sample_rate=44100,
-        sensitivity=20.0,
-        device_index=1
-    )
+    custom_config = AudioConfig(sample_rate=44100, sensitivity=20.0, device_index=1)
     assert custom_config.sample_rate == 44100
     assert custom_config.sensitivity == 20.0
     assert custom_config.device_index == 1
@@ -52,7 +52,7 @@ def test_list_audio_devices():
     print("\nTesting list_audio_devices...")
 
     # Mock PyAudio
-    with patch('usb_mic_detector.pyaudio.PyAudio') as mock_pyaudio:
+    with patch("usb_mic_detector.pyaudio.PyAudio") as mock_pyaudio:
         mock_audio = MagicMock()
         mock_pyaudio.return_value = mock_audio
         mock_audio.get_device_count.return_value = 2
@@ -61,15 +61,15 @@ def test_list_audio_devices():
         def get_device_info(index):
             if index == 0:
                 return {
-                    'name': 'Default Microphone',
-                    'maxInputChannels': 2,
-                    'defaultSampleRate': 44100.0
+                    "name": "Default Microphone",
+                    "maxInputChannels": 2,
+                    "defaultSampleRate": 44100.0,
                 }
             else:
                 return {
-                    'name': 'USB Microphone',
-                    'maxInputChannels': 1,
-                    'defaultSampleRate': 48000.0
+                    "name": "USB Microphone",
+                    "maxInputChannels": 1,
+                    "defaultSampleRate": 48000.0,
                 }
 
         mock_audio.get_device_info_by_index = get_device_info
@@ -77,9 +77,9 @@ def test_list_audio_devices():
         devices = list_audio_devices()
 
         assert len(devices) == 2
-        assert devices[0]['name'] == 'Default Microphone'
-        assert devices[0]['channels'] == 2
-        assert devices[1]['name'] == 'USB Microphone'
+        assert devices[0]["name"] == "Default Microphone"
+        assert devices[0]["channels"] == 2
+        assert devices[1]["name"] == "USB Microphone"
         print("  ✓ Device listing OK")
 
 
@@ -89,14 +89,14 @@ def test_usb_mic_detector():
 
     config = AudioConfig(sensitivity=10.0, noise_gate_threshold=0.1)
 
-    with patch('usb_mic_detector.pyaudio.PyAudio') as mock_pyaudio:
+    with patch("usb_mic_detector.pyaudio.PyAudio") as mock_pyaudio:
         mock_audio = MagicMock()
         mock_stream = MagicMock()
         mock_pyaudio.return_value = mock_audio
         mock_audio.open.return_value = mock_stream
 
         # Simulate audio data (1024 samples of int16)
-        mock_stream.read.return_value = b'\x00\x01' * 1024
+        mock_stream.read.return_value = b"\x00\x01" * 1024
 
         detector = USBMicDetector(config)
 
@@ -123,7 +123,7 @@ def test_context_manager():
     """Test USBMicDetector as context manager."""
     print("\nTesting context manager...")
 
-    with patch('usb_mic_detector.pyaudio.PyAudio') as mock_pyaudio:
+    with patch("usb_mic_detector.pyaudio.PyAudio") as mock_pyaudio:
         mock_audio = MagicMock()
         mock_stream = MagicMock()
         mock_pyaudio.return_value = mock_audio
@@ -150,9 +150,9 @@ def main():
         test_usb_mic_detector()
         test_context_manager()
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("All tests PASSED ✓")
-        print("="*50)
+        print("=" * 50)
         print("\nModule structure is correct!")
         print("\nTo run with real hardware:")
         print("1. Install dependencies:")
@@ -165,6 +165,7 @@ def main():
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

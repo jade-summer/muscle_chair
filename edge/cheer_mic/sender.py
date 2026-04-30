@@ -1,4 +1,5 @@
-﻿"""Event sender stub for Raspberry Pi Zero cheer mic pipeline."""
+"""Event sender stub for Raspberry Pi Zero cheer mic pipeline."""
+
 from __future__ import annotations
 
 import json
@@ -83,4 +84,3 @@ class Sender:
     def emit(self, event: CheerEvent) -> None:
         payload = self._format(event)
         self._transport.send(payload)
-

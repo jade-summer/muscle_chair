@@ -2,6 +2,7 @@
 
 Supports both real USB microphone input and pseudo data mode for testing.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -115,7 +116,9 @@ def main(
             # Handle cheer event
             if event:
                 # Print event on new line
-                print(f"\n🎉 CHEER DETECTED! Level: {event.level:.3f} at {event.timestamp:.2f}s")
+                print(
+                    f"\n🎉 CHEER DETECTED! Level: {event.level:.3f} at {event.timestamp:.2f}s"
+                )
 
                 # Send event to backend
                 try:
@@ -138,6 +141,7 @@ def main(
     except Exception as e:
         print(f"\n\n✗ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

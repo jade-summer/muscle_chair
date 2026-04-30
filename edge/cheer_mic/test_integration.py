@@ -2,6 +2,7 @@
 
 This demonstrates the integration of USBMicDetector into CheerDetector.
 """
+
 from __future__ import annotations
 
 import sys
@@ -112,23 +113,28 @@ def test_event_detection():
 
     # Create a sequence that crosses threshold
     test_sequence = [
-        0.1, 0.2, 0.3,  # Below threshold
-        0.7, 0.8, 0.9,  # Above threshold - should trigger
-        0.5, 0.4, 0.3,  # Below threshold again
-        0.8, 0.9, 0.7,  # Above threshold - should trigger again
+        0.1,
+        0.2,
+        0.3,  # Below threshold
+        0.7,
+        0.8,
+        0.9,  # Above threshold - should trigger
+        0.5,
+        0.4,
+        0.3,  # Below threshold again
+        0.8,
+        0.9,
+        0.7,  # Above threshold - should trigger again
     ]
 
-    detector = CheerDetector(
-        pseudo_sequence=test_sequence,
-        trigger_threshold=0.65
-    )
+    detector = CheerDetector(pseudo_sequence=test_sequence, trigger_threshold=0.65)
 
     print("Testing event detection with threshold=0.65...")
     event_count = 0
 
     for i in range(len(test_sequence)):
         level, event = detector.poll()
-        print(f"  Step {i+1}: level={level:.1f}", end="")
+        print(f"  Step {i + 1}: level={level:.1f}", end="")
 
         if event:
             event_count += 1
@@ -142,9 +148,9 @@ def test_event_detection():
 
 def main():
     """Run all integration tests."""
-    print("="*60)
+    print("=" * 60)
     print("CheerDetector Integration Tests")
-    print("="*60)
+    print("=" * 60)
     print()
 
     try:
@@ -153,9 +159,9 @@ def main():
         test_event_detection()
         test_real_mic_mode_mock()
 
-        print("="*60)
+        print("=" * 60)
         print("All Integration Tests Completed!")
-        print("="*60)
+        print("=" * 60)
         print("\n✓ CheerDetector successfully integrates USBMicDetector")
         print("✓ Backward compatibility maintained")
         print("✓ Context manager support added")
@@ -167,6 +173,7 @@ def main():
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

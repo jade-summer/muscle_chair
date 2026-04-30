@@ -30,10 +30,10 @@ BROADCAST_MODE: bool = False
 # --- 複数の出力先（本番用） ---
 # 各出力側ラズパイZeroに、役割に応じた名前を付け、IPアドレスを管理します。
 OUTPUT_DEVICES: Dict[str, str] = {
-    "chair_motor":  "http://192.168.188.138:5000/trigger_action",
-    "chair_led":    "http://192.168.188.176:5000/trigger_action",
+    "chair_motor": "http://192.168.188.138:5000/trigger_action",
+    "chair_led": "http://192.168.188.176:5000/trigger_action",
     "balloon_pump": "http://192.168.188.179:5000/trigger_action",
-    "speaker":      "http://192.168.188.175:5000/trigger_action",
+    "speaker": "http://192.168.188.175:5000/trigger_action",
 }
 
 # --- 単一の出力先（デバッグ用） ---
@@ -44,11 +44,12 @@ SINGLE_OUTPUT_DEVICE_URL: str = "http://127.0.0.1:8001/trigger_action"
 WINNING_THRESHOLD: int = 100
 COOLDOWN_SECONDS: int = 10
 POINT_MAPPING: Dict[str, float] = {
-    "pushup_sensor":    10.0,
+    "pushup_sensor": 10.0,
     "microphone_cheer": 1.0,
-    "bicycle_sensor":   0.5,
-    "gps_run":          0.2,
+    "bicycle_sensor": 0.5,
+    "gps_run": 0.2,
 }
+
 
 # ==============================================================================
 # Pydanticモデル定義 (Data Models)
@@ -64,6 +65,7 @@ class CheerTriggerPayload(BaseModel):
     event: str
     level: float = Field(ge=0, le=100)
     ts: int = Field(ge=0)
+
 
 # ==============================================================================
 # アプリケーションの状態管理 (Application State)
@@ -82,7 +84,7 @@ log_subscribers: List[asyncio.Queue] = []
 # ==============================================================================
 app = FastAPI(
     title="Macho Support Chair Controller",
-    description="各種センサからの入力を集計し，応援合戦を管理する中央サーバです．"
+    description="各種センサからの入力を集計し，応援合戦を管理する中央サーバです．",
 )
 
 # CORSミドルウェアの設定
@@ -94,6 +96,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # ==============================================================================
 # ビジネスロジック (Helper Functions)
 # ==============================================================================
@@ -101,12 +104,14 @@ def convert_to_point(source: str, value: int) -> float:
     """センサの種類と値から，獲得ポイントを計算"""
     return POINT_MAPPING.get(source, 0.0) * value
 
+
 def reset_gauges_after_win():
     """勝利後にゲームのゲージを初期化"""
     global game_state
     game_state["team_a_gauge"] = 0.0
     game_state["team_b_gauge"] = 0.0
     print("--- ゲージがリセットされました ---")
+
 
 def _send_command(device_name: str, url: str, winner: str):
     """単一のデバイスに命令を送信する内部関数"""
@@ -116,10 +121,11 @@ def _send_command(device_name: str, url: str, winner: str):
     except requests.RequestException as e:
         print(f"【エラー】{device_name} への命令送信に失敗しました: {e}")
 
+
 def handle_victory(winner: str):
     """勝利が確定した際の全ての処理をまとめた関数"""
     global game_state
-    
+
     print(f"🎉🎉🎉 勝者決定！ Team: {winner} 🎉🎉🎉")
     game_state["last_winner"] = winner
     game_state["last_win_time"] = time.time()
@@ -150,6 +156,7 @@ def push_log_event(event_type: str, payload: Dict[str, Any]):
         except asyncio.QueueFull:
             if queue in log_subscribers:
                 log_subscribers.remove(queue)
+
 
 # ==============================================================================
 # APIエンドポイント (API Endpoints)
@@ -214,15 +221,17 @@ async def cheer_trigger(body: Dict[str, Any] = Body(...)):
 async def add_point(data: InputData):
     """入力側のラズパイZeroからイベント報告を受け取り，ゲームロジックを処理"""
     global game_state
-    
+
     point = convert_to_point(data.source, data.value)
-    
+
     gauge_key = f"team_{data.team}_gauge"
     if gauge_key in game_state:
         game_state[gauge_key] += point
-        
-    print(f"Team A: {game_state['team_a_gauge']:.1f} | Team B: {game_state['team_b_gauge']:.1f}")
-    
+
+    print(
+        f"Team A: {game_state['team_a_gauge']:.1f} | Team B: {game_state['team_b_gauge']:.1f}"
+    )
+
     current_time = time.time()
     is_cooldown = (current_time - game_state["last_win_time"]) < COOLDOWN_SECONDS
 
@@ -232,21 +241,22 @@ async def add_point(data: InputData):
             winner = "team_a"
         elif game_state["team_b_gauge"] >= WINNING_THRESHOLD:
             winner = "team_b"
-        
+
         if winner:
             handle_victory(winner)
-    
-    return { "status": "success" }
+
+    return {"status": "success"}
+
 
 @app.get("/status", summary="現在のゲージ状況を取得")
 async def get_status():
     """現在の両チームのゲージ状況を返却．観客席のUI表示などに利用可能"""
     global game_state
-    
+
     current_time = time.time()
     is_cooldown = (current_time - game_state["last_win_time"]) < COOLDOWN_SECONDS
 
     if not is_cooldown:
         game_state["last_winner"] = None
 
-    return { **game_state, "is_cooldown": is_cooldown }
+    return {**game_state, "is_cooldown": is_cooldown}

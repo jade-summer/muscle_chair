@@ -1,8 +1,9 @@
-﻿"""Cheer detection primitive for Raspberry Pi Zero.
+"""Cheer detection primitive for Raspberry Pi Zero.
 
 This module supports both pseudo audio energy levels (for testing) and real
 USB microphone input for production use.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -72,7 +73,9 @@ class CheerDetector:
         else:
             # Pseudo data mode (backward compatible)
             self._levels: Optional[Iterator[float]] = iter(
-                pseudo_sequence if pseudo_sequence is not None else self._default_waveform()
+                pseudo_sequence
+                if pseudo_sequence is not None
+                else self._default_waveform()
             )
 
     def __enter__(self) -> CheerDetector:
@@ -141,4 +144,3 @@ class CheerDetector:
             if event is not None:
                 yield event
             count += 1
-

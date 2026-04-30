@@ -3,17 +3,21 @@
 This demonstrates the calibration tool's core functions without requiring
 interactive input or hardware.
 """
+
 from __future__ import annotations
 
 import sys
 from unittest.mock import MagicMock
 
 # Mock dependencies
-sys.modules['pyaudio'] = MagicMock()
-sys.modules['numpy'] = MagicMock()
+sys.modules["pyaudio"] = MagicMock()
+sys.modules["numpy"] = MagicMock()
 
 import numpy as np  # noqa: E402
-np.frombuffer = lambda data, dtype: MagicMock(astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024))
+
+np.frombuffer = lambda data, dtype: MagicMock(
+    astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024)
+)
 np.mean = lambda x: 10000.0
 np.sqrt = lambda x: 100.0
 np.int16 = int
@@ -90,7 +94,9 @@ def test_command_processing():
     # Test noise gate increase
     new_state = process_command("g", state)
     assert new_state.noise_gate_threshold == 0.10
-    print(f"  'g' command: {state.noise_gate_threshold} → {new_state.noise_gate_threshold}")
+    print(
+        f"  'g' command: {state.noise_gate_threshold} → {new_state.noise_gate_threshold}"
+    )
 
     # Test noise gate decrease
     new_state = process_command("G", new_state)
@@ -261,11 +267,13 @@ def main():
     except AssertionError as e:
         print(f"\n✗ Test failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

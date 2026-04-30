@@ -18,7 +18,8 @@ from typing import Optional
 # ==============================================================================
 # このラズパイが担当する、実行部隊のJavaScriptファイル名を設定します。
 # 例: "output_led.js", "output_motor.js", "output_speaker.js", "output_balloon.js"
-JAVASCRIPT_SCRIPT_NAME = "main-isd1820.js" 
+JAVASCRIPT_SCRIPT_NAME = "main-isd1820.js"
+
 
 # ==============================================================================
 # Pydanticモデル定義 (Data Models)
@@ -27,13 +28,15 @@ JAVASCRIPT_SCRIPT_NAME = "main-isd1820.js"
 class WinnerData(BaseModel):
     winner: Optional[str] = None
 
+
 # ==============================================================================
 # FastAPIアプリケーションの初期化 (Application Instance)
 # ==============================================================================
 app = FastAPI(
     title="Macho Chair Output Controller",
-    description="中央サーバーからの命令に応じて、割り当てられた物理演出を実行します。"
+    description="中央サーバーからの命令に応じて、割り当てられた物理演出を実行します。",
 )
+
 
 # ==============================================================================
 # APIエンドポイント (API Endpoints)
@@ -50,7 +53,7 @@ async def receive_trigger_from_main_server(data: WinnerData):
 
     # 2. 実行するコマンドをリストとして作成
     #    sudo を使うことで、GPIOなどのハードウェアにアクセスする権限を確保します。
-    command = ['sudo', 'node', JAVASCRIPT_SCRIPT_NAME, winner_team]
+    command = ["sudo", "node", JAVASCRIPT_SCRIPT_NAME, winner_team]
 
     # 3. 外部のJavaScriptスクリプトを実行
     try:
@@ -60,18 +63,19 @@ async def receive_trigger_from_main_server(data: WinnerData):
         subprocess.run(command, check=True, text=True)
         print(f"[Python] {JAVASCRIPT_SCRIPT_NAME} の実行が完了しました。")
         return {"status": "ok"}
-        
+
     except FileNotFoundError:
         # 'node'コマンドや、指定されたJSファイルが見つからない場合のエラー
         error_message = f"【エラー】'{' '.join(command)}' の実行に失敗しました。'node'コマンドまたはスクリプトが見つかりません。"
         print(error_message)
         return {"status": "error", "message": error_message}
-        
+
     except subprocess.CalledProcessError as e:
         # JavaScriptの実行中に、何らかのエラーが発生して異常終了した場合
         error_message = f"【エラー】JavaScriptの実行中にエラーが発生しました (終了コード: {e.returncode})"
         print(error_message)
         return {"status": "error", "message": error_message}
+
 
 # ==============================================================================
 # サーバ起動コマンド
