@@ -114,10 +114,6 @@ muscle_chair/
 ├── systemd/                 # systemdサービス定義
 │   └── muscle_chair.service # 自動起動用サービスファイル
 │
-├── .kiro/                   # Spec-Driven Development設定
-│   ├── steering/            # プロジェクト方針
-│   └── specs/               # 機能仕様
-│
 ├── CLAUDE.md                # AI開発アシスタント用コンテキスト
 ├── AGENTS.md                # プロジェクトメモリ（開発ルール）
 └── README.md                # このファイル

@@ -16,7 +16,7 @@ from typing import Optional
 # 設定項目
 # このラズパイが担当する、実行部隊のJavaScriptファイル名を設定します。
 # 例: "output_led.js", "output_motor.js", "output_speaker.js", "output_balloon.js"
-# ★ デプロイ時に担当デバイスのスクリプト名に変更すること
+# デプロイ時に担当デバイスのスクリプト名に変更すること
 JAVASCRIPT_SCRIPT_NAME = "output_led.js"
 
 
