@@ -16,7 +16,7 @@ import requests
 import websockets
 
 # --- 設定 ---
-WEBSOCKET_URI = "ws://192.168.11.4:8765"
+WEBSOCKET_URI = "ws://xxx.xxx.xxx.xxx:8765"
 BACKEND_URL = "http://127.0.0.1:8000/add_point"
 TEAM = "a"
 

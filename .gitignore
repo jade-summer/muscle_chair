@@ -25,3 +25,7 @@ Thumbs.db
 
 # Temporary files
 *.tmp
+CLAUDE.md
+AGENTS.md
+.kiro/
+.claude/

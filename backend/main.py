@@ -30,10 +30,10 @@ BROADCAST_MODE: bool = False
 # --- 複数の出力先（本番用） ---
 # 各出力側ラズパイZeroに、役割に応じた名前を付け、IPアドレスを管理します。
 OUTPUT_DEVICES: Dict[str, str] = {
-    "chair_motor": "http://192.168.188.138:5000/trigger_action",
-    "chair_led": "http://192.168.188.176:5000/trigger_action",
-    "balloon_pump": "http://192.168.188.179:5000/trigger_action",
-    "speaker": "http://192.168.188.175:5000/trigger_action",
+    "chair_motor": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
+    "chair_led": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
+    "balloon_pump": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
+    "speaker": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
 }
 
 # --- 単一の出力先（デバッグ用） ---

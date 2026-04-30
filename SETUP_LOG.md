@@ -20,16 +20,16 @@
 #### 1. OS・Wi-Fi セットアップ
 - CHIRIMEN Lite を microSD に書き込み済み
 - Web Serial RPi Zero Terminal（Chrome）経由で Wi-Fi 設定・IP アドレス確認
-  - IP アドレス: `192.168.11.3`
-  - ゲートウェイ: `192.168.11.1`
+  - IP アドレス: `xxx.xxx.xxx.xxx`
+  - ゲートウェイ: `xxx.xxx.xxx.xxx`
 
 #### 2. IP アドレスの固定
 `/etc/dhcpcd.conf` に以下を追記して固定化：
 ```
 interface wlan0
-static ip_address=192.168.11.3/24
-static routers=192.168.11.1
-static domain_name_servers=192.168.11.1
+static ip_address=xxx.xxx.xxx.xxx/24
+static routers=xxx.xxx.xxx.xxx
+static domain_name_servers=xxx.xxx.xxx.xxx
 ```
 
 #### 3. SSH の有効化
@@ -130,10 +130,10 @@ INFO: 127.0.0.1 - "POST /api/cheer/trigger HTTP/1.1" 200 OK
 ### 環境
 | 番号 | 担当デバイス | IP アドレス |
 |------|------------|-----------|
-| 5番 | motor（サーボモーター） | 192.168.11.6 |
-| 6番 | led | 192.168.11.8 |
-| 7番 | speaker | 192.168.11.2 |
-| 8番 | balloon | 192.168.11.9 |
+| 5番 | motor（サーボモーター） | xxx.xxx.xxx.xxx |
+| 6番 | led | xxx.xxx.xxx.xxx |
+| 7番 | speaker | xxx.xxx.xxx.xxx |
+| 8番 | balloon | xxx.xxx.xxx.xxx |
 
 ### 共通セットアップ手順（全4台）
 
@@ -143,8 +143,8 @@ sudo tee -a /etc/dhcpcd.conf << 'EOF'
 
 interface wlan0
 static ip_address=<各ラズパイのIP>/24
-static routers=192.168.11.1
-static domain_name_servers=192.168.11.1
+static routers=xxx.xxx.xxx.xxx
+static domain_name_servers=xxx.xxx.xxx.xxx
 EOF
 ```
 

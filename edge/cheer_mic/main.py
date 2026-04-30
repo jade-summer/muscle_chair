@@ -175,7 +175,7 @@ Examples:
   python -m edge.cheer_mic.main --team B --device 1
 
   # Custom backend URL
-  python -m edge.cheer_mic.main --team A --backend http://192.168.1.100:8000/api/cheer/trigger
+  python -m edge.cheer_mic.main --team A --backend http://xxx.xxx.xxx.xxx:8000/api/cheer/trigger
 
   # List available audio devices
   python -m edge.cheer_mic.usb_mic_detector
