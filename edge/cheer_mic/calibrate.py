@@ -309,7 +309,7 @@ def display_recommendations(state: CalibrationState) -> None:
     print("```")
     print()
     print("Note: Sensitivity and noise gate are set in AudioConfig (code level)")
-    print(f"      Trigger threshold can be set via --threshold CLI argument")
+    print("      Trigger threshold can be set via --threshold CLI argument")
     print()
     print("=" * 70)
 

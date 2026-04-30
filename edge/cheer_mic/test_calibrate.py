@@ -6,20 +6,20 @@ interactive input or hardware.
 from __future__ import annotations
 
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Mock dependencies
 sys.modules['pyaudio'] = MagicMock()
 sys.modules['numpy'] = MagicMock()
 
-import numpy as np
+import numpy as np  # noqa: E402
 np.frombuffer = lambda data, dtype: MagicMock(astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024))
 np.mean = lambda x: 10000.0
 np.sqrt = lambda x: 100.0
 np.int16 = int
 np.float32 = float
 
-from edge.cheer_mic.calibrate import (
+from edge.cheer_mic.calibrate import (  # noqa: E402
     CalibrationState,
     create_progress_bar,
     process_command,
@@ -117,7 +117,7 @@ def test_command_processing():
     assert reset_state.sensitivity == 15.0
     assert reset_state.noise_gate_threshold == 0.05
     assert reset_state.trigger_threshold == 0.65
-    print(f"  'r' command: Reset to defaults")
+    print("  'r' command: Reset to defaults")
 
     print("✓ Command processing OK\n")
 
@@ -190,7 +190,7 @@ def test_calibration_workflow():
 
     # Start with default state
     state = CalibrationState()
-    print(f"Initial state:")
+    print("Initial state:")
     print(f"  Sensitivity: {state.sensitivity}")
     print(f"  Noise Gate: {state.noise_gate_threshold}")
     print(f"  Trigger: {state.trigger_threshold}")
@@ -219,7 +219,7 @@ def test_calibration_workflow():
     print(f"     → Trigger: {state.trigger_threshold}")
 
     print()
-    print(f"Final calibrated state:")
+    print("Final calibrated state:")
     print(f"  Sensitivity: {state.sensitivity}")
     print(f"  Noise Gate: {state.noise_gate_threshold}")
     print(f"  Trigger: {state.trigger_threshold}")

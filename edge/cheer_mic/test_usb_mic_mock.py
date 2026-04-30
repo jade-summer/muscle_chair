@@ -10,14 +10,14 @@ sys.modules['pyaudio'] = MagicMock()
 sys.modules['numpy'] = MagicMock()
 
 # Configure numpy mock to behave like the real thing for our use case
-import numpy as np
+import numpy as np  # noqa: E402
 np.frombuffer = lambda data, dtype: MagicMock(astype=lambda x: MagicMock(__pow__=lambda self, p: [100.0] * 1024))
 np.mean = lambda x: 10000.0
 np.sqrt = lambda x: 100.0
 np.int16 = int
 np.float32 = float
 
-from usb_mic_detector import AudioConfig, USBMicDetector, list_audio_devices
+from usb_mic_detector import AudioConfig, USBMicDetector, list_audio_devices    # noqa: E402
 
 
 def test_audio_config():

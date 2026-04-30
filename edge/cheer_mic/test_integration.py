@@ -37,7 +37,7 @@ def test_pseudo_mode():
         level, event = detector2.poll()
         print(f"  Level: {level:.3f}", end="")
         if event:
-            print(f" → CHEER EVENT!")
+            print(" → CHEER EVENT!")
         else:
             print()
 

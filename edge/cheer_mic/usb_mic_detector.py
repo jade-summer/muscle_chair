@@ -227,11 +227,11 @@ def main() -> None:
         )
 
     # Allow user to select device (or use default)
-    print(f"\nUsing default audio device (or specify with device_index parameter)")
+    print("\nUsing default audio device (or specify with device_index parameter)")
 
     # Create detector with default configuration
     config = AudioConfig()
-    print(f"\nConfiguration:")
+    print("\nConfiguration:")
     print(f"  Sample Rate: {config.sample_rate} Hz")
     print(f"  Chunk Size: {config.chunk_size} samples")
     print(f"  Channels: {config.channels}")

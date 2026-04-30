@@ -53,7 +53,7 @@ Integrate real USB microphone input (MM-MCU028K) to replace pseudo audio data in
 
 ## Hardware Specifications
 - **Microphone Model**: SANWA SUPPLY MM-MCU028K
-- **Quantity**: 2 units (Team A and Team B)
+- **Quantity**: 1 units (Team A or Team B)
 - **Connection**: USB Type-A (requires Micro USB OTG adapter for Raspberry Pi Zero 2 W)
 - **Driver**: USB Audio Class compliant (driverless)
 
@@ -186,3 +186,36 @@ edge/cheer_mic/
   # Test recording
   arecord -D plughw:1,0 -f cd -d 10 test.wav
 ```
+
+---
+
+## Single Mic Cheer Detection (全国大会向け改修)
+
+### 変更概要
+ハードウェア制約により USB マイクを 2 本から 1 本に変更。
+1 本のマイクで片方のチームの応援のみを検知する設計（シングルチームモード）。
+コードの変更は不要で、既存の --team 引数をそのまま使用する。
+
+### 設計方針
+- **方式**: シングルチームモード
+  - 1 本のマイクを応援席の近くに設置し、対象チームを --team 引数で指定する
+  - 音量がしきい値を超えたら CHEER_TRIGGER イベントを HTTP POST で送信する
+  - バックエンド・デバイス制御・Web UI の変更は不要（完全互換）
+
+### 使用方法
+```bash
+# シングルマイク・Team A 検知（本番用）
+python3 -m edge.cheer_mic.main --team A --backend http://<SERVER_IP>:8000/api/cheer/trigger
+
+# シングルマイク・Team B 検知（本番用）
+python3 -m edge.cheer_mic.main --team B --backend http://<SERVER_IP>:8000/api/cheer/trigger
+
+# デバッグモード（マイクなし）
+python3 -m edge.cheer_mic.main --team A --debug
+```
+
+### 変更ファイル
+- なし（既存コードをそのまま使用）
+
+### ドキュメント更新
+- `README.md`: ハードウェア台数・構成図を更新

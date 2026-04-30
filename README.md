@@ -27,51 +27,25 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 ### 全体構成図
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                            観客席                                        │
-│  ┌──────────────┐                              ┌──────────────┐         │
-│  │  Team A 応援  │                              │  Team B 応援  │         │
-│  └──────┬───────┘                              └──────┬───────┘         │
-└─────────┼────────────────────────────────────────────┼──────────────────┘
-          │ 音声                                       │ 音声
-          ▼                                           ▼
-┌─────────────────┐                        ┌─────────────────┐
-│ Raspberry Pi    │                        │ Raspberry Pi    │
-│ Zero 2 W        │                        │ Zero 2 W        │
-│ (edge/cheer_mic)│                        │ (edge/cheer_mic)│
-│ + USB Mic       │                        │ + USB Mic       │
-└────────┬────────┘                        └────────┬────────┘
-         │ HTTP POST                                │ HTTP POST
-         │ /api/cheer/trigger                       │ /api/cheer/trigger
-         └──────────────────┬───────────────────────┘
-                            ▼
-              ┌───────────────────────────┐
-              │    Raspberry Pi 4         │
-              │    (backend/main.py)      │
-              │    中央コントローラー       │
-              │    - ゲームロジック         │
-              │    - SSEログ配信           │
-              │    - 勝利判定              │
-              └─────────────┬─────────────┘
-                            │ HTTP POST /trigger_action
-        ┌───────────────────┼───────────────────┐
-        │                   │                   │
-        ▼                   ▼                   ▼
-┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-│ RPi Zero      │  │ RPi Zero      │  │ RPi Zero      │
-│ (モーター制御) │  │ (LED制御)     │  │ (スピーカー)   │
-│ output_motor  │  │ output_led    │  │ output_speaker│
-└───────────────┘  └───────────────┘  └───────────────┘
-        │                   │                   │
-        ▼                   ▼                   ▼
-   サーボモーター        LED点滅           音声出力
-   (椅子のアーム)       (勝利演出)        (ファンファーレ)
-
-              ┌───────────────────────────┐
-              │      Web UI (観客席)       │
-              │      (web/index.html)     │
-              │      リアルタイムスコア表示  │
-              └───────────────────────────┘
+┌──────────────────────────┐
+│     Team A 応援席         │
+│  （マイクをここに設置）     │
+└──────────┬───────────────┘
+           │ 音声
+           ▼
+┌─────────────────────────┐
+│ Raspberry Pi Zero 2 W   │
+│ (edge/cheer_mic)        │
+│ + USB Mic × 1           │
+└──────────┬──────────────┘
+           │ HTTP POST /api/cheer/trigger
+           │ (team=A, level=xx)
+           ▼
+┌──────────────────────────┐
+│    Raspberry Pi 4        │
+│    (backend/main.py)     │
+│    ゲームロジック・スコア管理│
+└──────────────────────────┘
 ```
 
 ### 各層の役割
@@ -181,9 +155,9 @@ muscle_chair/
 | デバイス | 用途 | 台数 |
 |---------|------|------|
 | Raspberry Pi 4 | 中央コントローラー | 1 |
-| Raspberry Pi Zero 2 W | エッジ処理（マイク入力） | 2 |
+| Raspberry Pi Zero 2 W | エッジ処理（マイク入力） | 1 |
 | Raspberry Pi Zero | 出力制御（モーター/LED/スピーカー/風船） | 4 |
-| SANWA SUPPLY MM-MCU028K | USBマイク（応援検知） | 2 |
+| SANWA SUPPLY MM-MCU028K | USBマイク（応援検知） | 1 |
 | SG90 サーボモーター | 椅子アーム駆動 | - |
 | PCA9685 | I2Cサーボドライバー | - |
 | LED、リレー、ファン等 | 各種演出用 | - |
@@ -296,13 +270,10 @@ COOLDOWN_SECONDS = 10    # 勝利後のクールダウン時間
    uvicorn output_server:app --host 0.0.0.0 --port 5000
    ```
 
-3. **エッジデバイスを起動**（各チームのRaspberry Pi Zero 2 Wで）
+3. **エッジデバイスを起動**（Raspberry Pi Zero 2 Wで）
    ```bash
-   # Team A
+   # シングルマイク・Team A 検知（全国大会仕様）
    python3 -m edge.cheer_mic.main --team A --backend http://<サーバーIP>:8000/api/cheer/trigger
-
-   # Team B
-   python3 -m edge.cheer_mic.main --team B --backend http://<サーバーIP>:8000/api/cheer/trigger
    ```
 
 4. **Web UIを開く**

@@ -10,7 +10,7 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 from fastapi import Body, FastAPI, HTTPException, Request
