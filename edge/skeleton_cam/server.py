@@ -35,9 +35,13 @@ picam2.configure(config)
 picam2.start()
 
 
-def calculate_angle(a: list, b: list, c: list) -> float:
-    """3点の座標(x, y)から頂点bの角度を算出"""
-    rad = math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(a[1] - b[1], a[0] - b[0])
+def calculate_angle(
+    point_a: list[float], point_b: list[float], point_c: list[float]
+) -> float:
+    """3点の座標(x, y)から頂点point_bの角度を算出"""
+    rad = math.atan2(point_c[1] - point_b[1], point_c[0] - point_b[0]) - math.atan2(
+        point_a[1] - point_b[1], point_a[0] - point_b[0]
+    )
     angle = abs(rad * 180.0 / math.pi)
     if angle > 180.0:
         angle = 360 - angle
@@ -82,17 +86,17 @@ async def handle_communication(websocket):
 
                     if current_mode == "Squat":
                         # 右股関節(24), 右膝(26), 右足首(28)
-                        a = [lm[24].x, lm[24].y]
-                        b = [lm[26].x, lm[26].y]
-                        c = [lm[28].x, lm[28].y]
-                        angle = calculate_angle(a, b, c)
+                        point_a = [lm[24].x, lm[24].y]
+                        point_b = [lm[26].x, lm[26].y]
+                        point_c = [lm[28].x, lm[28].y]
+                        angle = calculate_angle(point_a, point_b, point_c)
 
                     elif current_mode == "Push-up":
                         # 右肩(12), 右肘(14), 右手首(16)
-                        a = [lm[12].x, lm[12].y]
-                        b = [lm[14].x, lm[14].y]
-                        c = [lm[16].x, lm[16].y]
-                        angle = calculate_angle(a, b, c)
+                        point_a = [lm[12].x, lm[12].y]
+                        point_b = [lm[14].x, lm[14].y]
+                        point_c = [lm[16].x, lm[16].y]
+                        angle = calculate_angle(point_a, point_b, point_c)
 
             # 4. JPEG圧縮してBase64化（RGB→BGRに変換してからエンコード）
             image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)

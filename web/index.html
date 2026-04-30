@@ -49,7 +49,7 @@
         .team-b .gauge-bar { background: linear-gradient(90deg, #2980b9, #3498db); }
         .status-text { text-align: center; margin-top: 40px; font-size: 2rem; color: #f1c40f; height: 40px; }
 
-        /* ★★★ 勝ち演出用のスタイル ★★★ */
+        /* 勝利演出用のスタイル */
         .victory-overlay {
             position: fixed;
             top: 0;
@@ -162,10 +162,6 @@
                 teamBBar.style.width = `${Math.min(teamBPercentage, 100)}%`;
                 teamBBar.innerText = Math.round(data.team_b_gauge);
 
-                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-                // 勝利演出のロジックを修正
-                // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-                
                 const lastWinner = data.last_winner;
 
                 // 1. 勝利の瞬間の処理

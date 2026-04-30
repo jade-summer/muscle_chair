@@ -1,0 +1,9 @@
+{
+  "name": "output-motor",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@chirimen/pca9685": "*",
+    "node-web-i2c": "*"
+  }
+}

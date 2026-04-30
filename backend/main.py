@@ -9,7 +9,7 @@ Macho Support Chair - 中央コントローラー (最終リファクタリン�
 import asyncio
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 import requests
@@ -18,11 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
-# ==============================================================================
-# 設定項目 (Configuration)
-# ==============================================================================
+# 設定項目
 
-# --- ★★★ 出力モードの切り替えスイッチ ★★★ ---
+# --- 出力モードの切り替えスイッチ ---
 # True:  複数の出力先 (OUTPUT_DEVICES) に一斉送信します（本番用）
 # False: 単一の出力先 (SINGLE_OUTPUT_DEVICE_URL) に送信します（デバッグ用）
 BROADCAST_MODE: bool = False
@@ -51,9 +49,7 @@ POINT_MAPPING: Dict[str, float] = {
 }
 
 
-# ==============================================================================
-# Pydanticモデル定義 (Data Models)
-# ==============================================================================
+# Pydanticモデル定義
 class InputData(BaseModel):
     source: str
     value: int
@@ -67,10 +63,8 @@ class CheerTriggerPayload(BaseModel):
     ts: int = Field(ge=0)
 
 
-# ==============================================================================
-# アプリケーションの状態管理 (Application State)
-# ==============================================================================
-game_state: Dict[str, any] = {
+# アプリケーションの状態管理
+game_state: Dict[str, Any] = {
     "team_a_gauge": 0.0,
     "team_b_gauge": 0.0,
     "last_win_time": 0.0,
@@ -79,9 +73,7 @@ game_state: Dict[str, any] = {
 
 log_subscribers: List[asyncio.Queue] = []
 
-# ==============================================================================
-# FastAPIアプリケーションの初期化 (Application Instance)
-# ==============================================================================
+# FastAPIアプリケーションの初期化
 app = FastAPI(
     title="Macho Support Chair Controller",
     description="各種センサからの入力を集計し，応援合戦を管理する中央サーバです．",
@@ -97,9 +89,7 @@ app.add_middleware(
 )
 
 
-# ==============================================================================
-# ビジネスロジック (Helper Functions)
-# ==============================================================================
+# ビジネスロジック
 def convert_to_point(source: str, value: int) -> float:
     """センサの種類と値から，獲得ポイントを計算"""
     return POINT_MAPPING.get(source, 0.0) * value
@@ -130,7 +120,7 @@ def handle_victory(winner: str):
     game_state["last_winner"] = winner
     game_state["last_win_time"] = time.time()
 
-    # --- ★★★ 設定に応じて、送信先を切り替えます ★★★ ---
+    # --- 設定に応じて、送信先を切り替えます ---
     if BROADCAST_MODE:
         print("ブロードキャストモード：全ての出力装置に命令を送信します...")
         for device_name, url in OUTPUT_DEVICES.items():
@@ -147,7 +137,7 @@ def push_log_event(event_type: str, payload: Dict[str, Any]):
     entry = {
         "type": event_type,
         "payload": payload,
-        "logged_at": datetime.utcnow().isoformat() + "Z",
+        "logged_at": datetime.now(timezone.utc).isoformat(),
     }
     print(f"[LOG][{event_type}] {json.dumps(entry, ensure_ascii=False)}")
     for queue in list(log_subscribers):
@@ -158,9 +148,7 @@ def push_log_event(event_type: str, payload: Dict[str, Any]):
                 log_subscribers.remove(queue)
 
 
-# ==============================================================================
-# APIエンドポイント (API Endpoints)
-# ==============================================================================
+# APIエンドポイント
 @app.get("/api/logs/stream", summary="SSEログ配信")
 async def stream_logs(request: Request):
     """Web UI向けのログストリーム"""
@@ -199,14 +187,14 @@ async def cheer_trigger(body: Dict[str, Any] = Body(...)):
     except ValidationError as exc:
         raise HTTPException(status_code=400, detail=exc.errors())
 
-    ts_iso = datetime.utcfromtimestamp(payload.ts / 1000).isoformat() + "Z"
+    ts_iso = datetime.fromtimestamp(payload.ts / 1000, tz=timezone.utc).isoformat()
     log_payload = {
         "team": payload.team,
         "event": payload.event,
         "level": payload.level,
         "ts": ts_iso,
         "ts_ms": payload.ts,
-        "received_at": datetime.utcnow().isoformat() + "Z",
+        "received_at": datetime.now(timezone.utc).isoformat(),
     }
     print(
         f"[CHEER_TRIGGER] team={payload.team} event={payload.event} "

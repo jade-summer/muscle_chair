@@ -15,26 +15,20 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-# ==============================================================================
-# Pydanticモデル定義 (Data Models)
-# ==============================================================================
+# Pydanticモデル定義
 # 中央コントローラーから送られてくるJSONの構造を定義
 class WinnerData(BaseModel):
     winner: Optional[str] = None
 
 
-# ==============================================================================
-# FastAPIアプリケーションの初期化 (Application Instance)
-# ==============================================================================
+# FastAPIアプリケーションの初期化
 app = FastAPI(
     title="Fake Output Server",
     description="中央コントローラーからの命令受信をシミュレートするダミーサーバーです．",
 )
 
 
-# ==============================================================================
-# APIエンドポイント (API Endpoints)
-# ==============================================================================
+# APIエンドポイント
 @app.post("/trigger_action", summary="中央コントローラーからの命令を受信")
 async def receive_trigger_from_main_server(data: WinnerData):
     """
@@ -49,7 +43,4 @@ async def receive_trigger_from_main_server(data: WinnerData):
     return {"status": "ok", "message": "Command successfully received by fake server."}
 
 
-# ==============================================================================
-# サーバ起動コマンド
-# uvicorn fake_output_server:app --port 8001
-# ==============================================================================
+# サーバ起動コマンド: uvicorn fake_output_server:app --port 8001

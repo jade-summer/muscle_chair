@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from collections import deque
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 import pyaudio
@@ -29,7 +29,7 @@ class AudioConfig:
     device_index: Optional[int] = None  # None = default device
 
 
-def list_audio_devices() -> list[dict[str, any]]:
+def list_audio_devices() -> list[dict[str, Any]]:
     """List all available audio input devices.
 
     Returns:

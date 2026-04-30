@@ -13,7 +13,7 @@ import fetch from "node-fetch";
 
 const CONFIG = {
     // 中央サーバー(ラズパイ4)のIPアドレスとポート
-    API_URL: "http://<ラズパイ4のIPアドレス>:8000/add_point", 
+    API_URL: "http://xxx.xxx.xxx.xxx:8000/add_point",
     // このセンサーが所属するチームID ('team_a' または 'team_b')
     TEAM_ID: "team_a",
     // センサーを接続したGPIOピン番号

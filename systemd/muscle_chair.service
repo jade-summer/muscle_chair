@@ -3,12 +3,12 @@ Description=Muscle Chair Output Server
 After=network.target
 
 [Service]
-ExecStart=/home/pi/myApp/start_server.sh
-WorkingDirectory=/home/pi/myApp
+ExecStart=/home/pi/muscle_chair/scripts/start_server.sh
+WorkingDirectory=/home/pi/muscle_chair/backend
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
-User=root
+User=pi
 
 [Install]
 WantedBy=multi-user.target

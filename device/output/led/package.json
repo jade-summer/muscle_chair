@@ -1,0 +1,9 @@
+{
+  "name": "output-led",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "*",
+    "node-web-gpio": "*"
+  }
+}

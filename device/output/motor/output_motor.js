@@ -150,7 +150,6 @@ async function main() {
     } catch (error) {
         console.error("[JS エラー] 処理中にエラーが発生しました:", error);
     } finally {
-        // ★★★ プログラムが正常終了しても、エラーで落ちても、必ず実行される後片付け ★★★
         await shutdownServo(pca9685, pattern.channel);
         console.log("[JS] プログラムを終了します。");
     }

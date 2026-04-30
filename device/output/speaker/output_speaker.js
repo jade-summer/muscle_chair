@@ -97,7 +97,6 @@ async function main() {
     } catch (error) {
         console.error("[JS エラー] 処理中にエラーが発生しました:", error);
     } finally {
-        // ★★★ プログラムが正常終了しても、エラーで落ちても、必ず実行される後片付け ★★★
         if (port) {
             console.log("[JS] 演出完了。ポートを解放します。");
             // 念のため、最後にもう一度OFFにしておく
