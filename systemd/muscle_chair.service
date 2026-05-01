@@ -3,7 +3,11 @@ Description=Muscle Chair Output Server
 After=network.target
 
 [Service]
+# Raspberry Pi のデフォルトユーザー名 pi を前提としています
+# 異なるユーザー名の場合はパスを変更してください
 ExecStart=/home/pi/muscle_chair/scripts/start_server.sh
+# Raspberry Pi のデフォルトユーザー名 pi を前提としています
+# 異なるユーザー名の場合はパスを変更してください
 WorkingDirectory=/home/pi/muscle_chair/backend
 StandardOutput=inherit
 StandardError=inherit

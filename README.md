@@ -14,12 +14,9 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 
 ### 基本動作
 
-1. **応援検知**: 各チームに設置されたUSBマイクが観客の声援を検知
-2. **レベル計測**: RMSベースの音量解析でチアレベル（0.0〜1.0）を算出
-3. **イベント送信**: しきい値を超えると`CHEER_TRIGGER`イベントをバックエンドに送信
-4. **スコア集計**: 中央サーバーが各種センサーからのポイントを集計
-5. **勝利判定**: ゲージが100に達したチームの勝利を判定
-6. **演出実行**: 勝利チームに応じた物理演出（モーター、LED、スピーカー、風船）を一斉実行
+1. **スコア集計**: 中央サーバーが各種センサーからのポイントを集計
+2. **勝利判定**: ゲージが100に達したチームの勝利を判定
+3. **演出実行**: 勝利チームに応じた物理演出（モーター、LED、スピーカー、風船）を一斉実行
 
 ### 受賞歴
 
@@ -31,22 +28,21 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 ### 全体構成図
 
 ```
-┌──────────────────────────┐     ┌──────────────────────────┐
-│     Team A 応援席         │     │    トレーニングエリア     │
-│  （マイクをここに設置）    │     │ （カメラ＋選手の前に設置） │
-└──────────┬───────────────┘     └──────────┬───────────────┘
-           │ 音声                            │ 映像（WebSocket）
-           ▼                                ▼
-┌─────────────────────────┐     ┌─────────────────────────┐
-│ Raspberry Pi Zero 2 W   │     │ Raspberry Pi Zero 2 W   │
-│ (edge/cheer_mic)        │     │ (edge/skeleton_cam)     │
-│ + USB Mic × 1           │     │ + Pi Camera             │
-└──────────┬──────────────┘     └──────────┬──────────────┘
-           │ HTTP POST /api/cheer/trigger  │ WebSocket(8765)
-           │ (team=A, level=xx)            │
-           │                  ┌────────────┘
-           │                  │ HTTP POST /add_point
-           ▼                  ▼ (骨格検知→回数カウント)
+┌──────────────────────────┐
+│    トレーニングエリア      │
+│ （カメラ＋選手の前に設置） │
+└──────────┬───────────────┘
+           │ 映像（WebSocket）
+           ▼
+┌─────────────────────────┐
+│ Raspberry Pi Zero 2 W   │
+│ (skeleton_cam)          │
+│ + Pi Camera             │
+└──────────┬──────────────┘
+           │ WebSocket(8765)
+           │
+           │ HTTP POST /add_point
+           ▼ (骨格検知→回数カウント)
 ┌────────────────────────────────────────────┐
 │              Raspberry Pi 4                │
 │              (backend/main.py)             │
@@ -58,7 +54,7 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 
 | レイヤー | ディレクトリ | 役割 |
 |---------|-------------|------|
-| **Edge** | `edge/` | Raspberry Pi Zero上でセンサー入力・信号処理を実行。USB マイク音声解析（cheer_mic）とカメラによる骨格検出・筋トレ回数カウント（skeleton_cam）を担当 |
+| **Skeleton Cam** | `skeleton_cam/` | Raspberry Pi Zero上でカメラによる骨格検出・筋トレ回数カウントを実行 |
 | **Backend** | `backend/` | 中央サーバー。ゲームロジック（スコア管理、勝利判定）を実行し、出力デバイスへ命令を一斉送信 |
 | **Device** | `device/` | 出力側Raspberry PiでのGPIO/I2C制御。モーター、LED、スピーカー、風船ポンプを駆動 |
 | **Web** | `web/` | 観客向けリアルタイムスコア表示UI。勝利演出（紙吹雪アニメーション等）を含む |
@@ -66,8 +62,7 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 ### データフロー
 
 ```
-音声入力 → RMS計算 → ノイズゲート → スムージング → 正規化(0-1)
-    → しきい値判定 → CheerEvent生成 → HTTP POST → バックエンド
+カメラ映像 → 骨格検出 → 関節角度計算 → 回数カウント → HTTP POST → バックエンド
     → ポイント加算 → 勝利判定 → 出力デバイスへ一斉送信 → 物理演出
 ```
 
@@ -75,24 +70,18 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 
 ```
 muscle_chair/
-├── edge/                    # エッジデバイス（Raspberry Pi Zero）
-│   ├── cheer_mic/           # チア検知モジュール（USB マイク）
-│   │   ├── main.py          # エントリーポイント（CLI）
-│   │   ├── cheer_detector.py # チア検知ロジック
-│   │   ├── usb_mic_detector.py # USBマイク入力処理
-│   │   ├── sender.py        # HTTP送信モジュール
-│   │   ├── calibrate.py     # キャリブレーションツール
-│   │   └── README.md        # モジュール詳細ドキュメント
-│   └── skeleton_cam/        # 骨格検知モジュール（Pi Camera）
-│       ├── server.py        # WebSocketサーバー（Pi側・骨格検出）
-│       ├── client.py        # WebSocketクライアント（PC側・回数カウント）
-│       ├── requirements.txt # Python依存関係
-│       └── README.md        # モジュール詳細ドキュメント
+├── skeleton_cam/            # 骨格検知モジュール（Pi Camera）
+│   ├── server.py            # WebSocketサーバー（Pi側・骨格検出）
+│   ├── client.py            # WebSocketクライアント（PC側・回数カウント）
+│   ├── requirements-server.txt # Python依存関係（Raspberry Pi）
+│   ├── requirements-client.txt # Python依存関係（PC）
+│   └── README.md            # モジュール詳細ドキュメント
 │
 ├── backend/                 # 中央サーバー（Raspberry Pi 4）
 │   ├── main.py              # FastAPIメインサーバー（ゲームロジック）
 │   ├── output_server.py     # 出力側受信サーバー（汎用）
-│   ├── fake_output_server.py # デバッグ用ダミーサーバー
+│   ├── dev/
+│   │   └── fake_output_server.py # デバッグ用ダミーサーバー
 │   └── requirements.txt     # Python依存関係
 │
 ├── device/                  # IoTデバイス制御（Node.js）
@@ -128,7 +117,6 @@ muscle_chair/
 | カテゴリ | 技術 | 用途 |
 |---------|------|------|
 | **サーバーサイド** | Python 3.12 + FastAPI | 中央コントローラー、REST API |
-| **エッジ処理（音声）** | Python 3 + PyAudio + NumPy | USB マイク音声解析 |
 | **エッジ処理（映像）** | Python 3 + MediaPipe + Picamera2 | 骨格検出・筋トレ回数カウント |
 | **デバイス制御** | Node.js + CHIRIMEN | GPIO/I2C制御 |
 | **フロントエンド** | HTML/CSS/JavaScript | リアルタイムスコア表示 |
@@ -141,8 +129,7 @@ muscle_chair/
 | fastapi | - | Web API フレームワーク |
 | uvicorn | - | ASGI サーバー |
 | pydantic | - | データバリデーション |
-| pyaudio | >=0.2.13 | 音声入力キャプチャ |
-| numpy | >=1.24.0 | 数値計算（RMS算出） |
+| numpy | >=1.24.0 | 数値計算（skeleton_cam 映像処理） |
 | requests | >=2.31.0 | HTTP クライアント |
 | mediapipe | >=0.10.0 | 骨格検出（skeleton_cam） |
 | websockets | >=12.0 | WebSocketストリーミング（skeleton_cam） |
@@ -161,9 +148,8 @@ muscle_chair/
 | デバイス | 用途 | 台数 |
 |---------|------|------|
 | Raspberry Pi 4 | 中央コントローラー | 1 |
-| Raspberry Pi Zero 2 W | エッジ処理（マイク入力・骨格検出） | 2 |
+| Raspberry Pi Zero 2 W | エッジ処理（骨格検出） | 1 |
 | Raspberry Pi Zero | 出力制御（モーター/LED/スピーカー/風船） | 4 |
-| SANWA SUPPLY MM-MCU028K | USBマイク（応援検知） | 1 |
 | Raspberry Pi Camera Module | 骨格検出用カメラ | 1 |
 | SG90 サーボモーター | 椅子アーム駆動 | - |
 | PCA9685 | I2Cサーボドライバー | - |
@@ -199,37 +185,20 @@ cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### エッジデバイス（Cheer Mic）のセットアップ
-
-```bash
-# システムパッケージをインストール（Raspberry Pi）
-sudo apt update
-sudo apt install portaudio19-dev python3-pyaudio python3-numpy
-
-# Pythonパッケージをインストール
-pip install -r edge/cheer_mic/requirements.txt
-
-# USBマイクの接続確認
-arecord -l
-
-# チア検知を起動
-python3 -m edge.cheer_mic.main --team A --backend http://<中央サーバーIP>:8000/api/cheer/trigger
-```
-
 ### エッジデバイス（Skeleton Cam）のセットアップ
 
 ```bash
 # Raspberry Pi側（server.py）
 sudo apt install python3-picamera2 python3-opencv python3-numpy
-pip install -r edge/skeleton_cam/requirements.txt
+pip install -r skeleton_cam/requirements-server.txt
 
 # サーバーを起動
-python3 -m edge.skeleton_cam.server
+python3 -m skeleton_cam.server
 
 # PC側（client.py）—— IPアドレスを編集してから実行
 # client.py の WEBSOCKET_URI を Raspberry Pi の IP に変更
-pip install -r edge/skeleton_cam/requirements.txt
-python3 -m edge.skeleton_cam.client
+pip install -r skeleton_cam/requirements-client.txt
+python3 -m skeleton_cam.client
 ```
 
 ### 出力デバイス（Device）のセットアップ
@@ -296,8 +265,7 @@ COOLDOWN_SECONDS = 10    # 勝利後のクールダウン時間
 
 3. **エッジデバイスを起動**（Raspberry Pi Zero 2 Wで）
    ```bash
-   # シングルマイク・Team A 検知（全国大会仕様）
-   python3 -m edge.cheer_mic.main --team A --backend http://<サーバーIP>:8000/api/cheer/trigger
+   python3 -m skeleton_cam.server
    ```
 
 4. **Web UIを開く**
@@ -310,31 +278,14 @@ COOLDOWN_SECONDS = 10    # 勝利後のクールダウン時間
 
 ```bash
 # ダミー出力サーバーを起動
-cd backend
+cd backend/dev
 uvicorn fake_output_server:app --port 8001
-
-# 疑似データモードでチア検知を起動
-python3 -m edge.cheer_mic.main --team A --debug
-```
-
-### キャリブレーション
-
-USBマイクのパラメータ調整：
-
-```bash
-# オーディオデバイスの一覧表示
-python3 -m edge.cheer_mic.usb_mic_detector
-
-# キャリブレーションツールを起動
-python3 -m edge.cheer_mic.calibrate
 ```
 
 ### 動作確認方法
 
-1. **マイク入力確認**: ターミナルにリアルタイムレベルバーが表示される
-2. **イベント送信確認**: `CHEER DETECTED!` メッセージとHTTP送信成功表示
-3. **Web UI確認**: ゲージがリアルタイムで更新される
-4. **勝利演出確認**: ゲージが100に達すると演出が実行される
+1. **Web UI確認**: ゲージがリアルタイムで更新される
+2. **勝利演出確認**: ゲージが100に達すると演出が実行される
 
 ## ライセンス
 

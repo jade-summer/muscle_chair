@@ -12,6 +12,7 @@ const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 // ==============================================================================
 
 const CONFIG = {
+    // 各デバイスは独立したRaspberry Pi Zeroで動作するため、ピン番号は重複していても問題ありません
     GPIO_PIN: 26, // LEDを接続したGPIOピン番号
 
     // 各チームの勝利演出パターン

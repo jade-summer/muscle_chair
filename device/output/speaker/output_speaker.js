@@ -12,6 +12,7 @@ const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
 // ==============================================================================
 
 const CONFIG = {
+    // 各デバイスは独立したRaspberry Pi Zeroで動作するため、ピン番号は重複していても問題ありません
     // スピーカーを制御するリレーやアンプを接続したGPIOピン番号
     SPEAKER_PIN: 26,
 

@@ -1,12 +1,5 @@
-# Raspberry Pi側 (server.py)
 websockets>=12.0
 opencv-python>=4.8.0
 mediapipe>=0.10.0
 numpy>=1.24.0
 # picamera2 は apt でインストール: sudo apt install python3-picamera2
-
-# PC側 (client.py)
-websockets>=12.0
-opencv-python>=4.8.0
-numpy>=1.24.0
-requests>=2.31.0

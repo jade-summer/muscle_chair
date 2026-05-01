@@ -1,24 +1,21 @@
 """
-Muscle Chair - 中央コントローラー (最終リファクタリング版)
+Muscle Chair - 中央コントローラー
 
-入力側の各種センサからのイベント報告を集約かつ応援合戦のゲームロジックを管理し，
-勝利条件が満たされた際に、登録されている全ての出力側ラズパイZeroに
-一斉に命令を送信するFastAPIサーバ
+各種センサからのポイント報告を集約してゲームロジックを管理し、
+勝利条件が満たされた際に出力側デバイスへ命令を送信する FastAPI サーバー。
 """
 
 import asyncio
-import json
+import logging
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Literal, TypedDict
 
-import requests
-from fastapi import Body, FastAPI, HTTPException, Request
+import httpx
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
-# 設定項目
+logger = logging.getLogger(__name__)
 
 # --- 出力モードの切り替えスイッチ ---
 # True:  複数の出力先 (OUTPUT_DEVICES) に一斉送信します（本番用）
@@ -26,8 +23,7 @@ from pydantic import BaseModel, Field, ValidationError
 BROADCAST_MODE: bool = False
 
 # --- 複数の出力先（本番用） ---
-# 各出力側ラズパイZeroに、役割に応じた名前を付け、IPアドレスを管理します。
-OUTPUT_DEVICES: Dict[str, str] = {
+OUTPUT_DEVICES: dict[str, str] = {
     "chair_motor": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
     "chair_led": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
     "balloon_pump": "http://xxx.xxx.xxx.xxx:5000/trigger_action",
@@ -37,49 +33,41 @@ OUTPUT_DEVICES: Dict[str, str] = {
 # --- 単一の出力先（デバッグ用） ---
 SINGLE_OUTPUT_DEVICE_URL: str = "http://127.0.0.1:8001/trigger_action"
 
-
 # --- ゲームバランス設定 ---
 WINNING_THRESHOLD: int = 100
 COOLDOWN_SECONDS: int = 10
-POINT_MAPPING: Dict[str, float] = {
+POINT_MAPPING: dict[str, float] = {
     "pushup_sensor": 10.0,
-    "microphone_cheer": 1.0,  # /api/cheer/trigger はログのみ。/add_point経由では未使用（将来の拡張用）
     "bicycle_sensor": 0.5,
     "gps_run": 0.2,
 }
 
 
-# Pydanticモデル定義
 class InputData(BaseModel):
     source: str
-    value: int
-    team: str
+    value: int = Field(ge=1)
+    team: Literal["a", "b"]
 
 
-class CheerTriggerPayload(BaseModel):
-    team: str
-    event: str
-    level: float = Field(ge=0, le=100)
-    ts: int = Field(ge=0)
+class GameState(TypedDict):
+    team_a_gauge: float
+    team_b_gauge: float
+    last_win_time: float
+    last_winner: str | None
 
 
-# アプリケーションの状態管理
-game_state: Dict[str, Any] = {
+game_state: GameState = {
     "team_a_gauge": 0.0,
     "team_b_gauge": 0.0,
     "last_win_time": 0.0,
     "last_winner": None,
 }
 
-log_subscribers: List[asyncio.Queue] = []
-
-# FastAPIアプリケーションの初期化
 app = FastAPI(
     title="Muscle Chair Controller",
-    description="各種センサからの入力を集計し，応援合戦を管理する中央サーバです．",
+    description="各種センサからの入力を集計し、応援合戦を管理する中央サーバー。",
 )
 
-# CORSミドルウェアの設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -88,162 +76,73 @@ app.add_middleware(
 )
 
 
-# ビジネスロジック
 def convert_to_point(source: str, value: int) -> float:
-    """センサの種類と値から，獲得ポイントを計算"""
     return POINT_MAPPING.get(source, 0.0) * value
 
 
-def reset_gauges_after_win():
-    """勝利後にゲームのゲージを初期化"""
-    global game_state
+def _reset_gauges() -> None:
     game_state["team_a_gauge"] = 0.0
     game_state["team_b_gauge"] = 0.0
-    print("--- ゲージがリセットされました ---")
+    logger.info("--- ゲージがリセットされました ---")
 
 
-def _send_command(device_name: str, url: str, winner: str):
-    """単一のデバイスに命令を送信する内部関数"""
-    print(f"  -> {device_name} ({url}) へ送信中...")
+async def _send_command(device_name: str, url: str, winner: str) -> None:
+    logger.info("  -> %s (%s) へ送信中...", device_name, url)
     try:
-        requests.post(url, json={"winner": winner}, timeout=2)
-    except requests.RequestException as e:
-        print(f"【エラー】{device_name} への命令送信に失敗しました: {e}")
+        async with httpx.AsyncClient() as client:
+            await client.post(url, json={"winner": winner}, timeout=2.0)
+    except httpx.RequestError as e:
+        logger.error("【エラー】%s への命令送信に失敗しました: %s", device_name, e)
 
 
-def handle_victory(winner: str):
-    """勝利が確定した際の全ての処理をまとめた関数"""
-    global game_state
-
-    print(f"🎉🎉🎉 勝者決定！ Team: {winner} 🎉🎉🎉")
+async def handle_victory(winner: str) -> None:
+    logger.info("🎉🎉🎉 勝者決定！ Team: %s 🎉🎉🎉", winner)
     game_state["last_winner"] = winner
     game_state["last_win_time"] = time.time()
 
-    # --- 設定に応じて、送信先を切り替えます ---
     if BROADCAST_MODE:
-        print("ブロードキャストモード：全ての出力装置に命令を送信します...")
-        for device_name, url in OUTPUT_DEVICES.items():
-            _send_command(device_name, url, winner)
-    else:
-        print("シングルモード：単一の出力装置に命令を送信します...")
-        _send_command("single_device", SINGLE_OUTPUT_DEVICE_URL, winner)
-
-    reset_gauges_after_win()
-
-
-def push_log_event(event_type: str, payload: Dict[str, Any]):
-    """SSEに流すログイベントを生成して配信"""
-    entry = {
-        "type": event_type,
-        "payload": payload,
-        "logged_at": datetime.now(timezone.utc).isoformat(),
-    }
-    print(f"[LOG][{event_type}] {json.dumps(entry, ensure_ascii=False)}")
-    for queue in list(log_subscribers):
-        try:
-            queue.put_nowait(entry)
-        except asyncio.QueueFull:
-            if queue in log_subscribers:
-                log_subscribers.remove(queue)
-
-
-# APIエンドポイント
-@app.get("/api/logs/stream", summary="SSEログ配信")
-async def stream_logs(request: Request):
-    """Web UI向けのログストリーム"""
-    queue: asyncio.Queue = asyncio.Queue()
-    log_subscribers.append(queue)
-
-    async def event_generator():
-        try:
-            while True:
-                event = await queue.get()
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                if await request.is_disconnected():
-                    break
-        except asyncio.CancelledError:
-            pass
-        finally:
-            if queue in log_subscribers:
-                log_subscribers.remove(queue)
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
-
-
-@app.post("/api/cheer/trigger", summary="応援トリガーの受信")
-async def cheer_trigger(body: Dict[str, Any] = Body(...)):
-    """エッジ側からの応援トリガーイベントの受信"""
-    required_keys = {"team", "event", "level", "ts"}
-    missing_keys = [key for key in required_keys if key not in body]
-    if missing_keys:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required fields: {', '.join(sorted(missing_keys))}",
+        logger.info("ブロードキャストモード：全ての出力装置に命令を送信します...")
+        await asyncio.gather(
+            *[_send_command(name, url, winner) for name, url in OUTPUT_DEVICES.items()]
         )
+    else:
+        logger.info("シングルモード：単一の出力装置に命令を送信します...")
+        await _send_command("single_device", SINGLE_OUTPUT_DEVICE_URL, winner)
 
-    try:
-        payload = CheerTriggerPayload(**body)
-    except ValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.errors())
-
-    ts_iso = datetime.fromtimestamp(payload.ts / 1000, tz=timezone.utc).isoformat()
-    log_payload = {
-        "team": payload.team,
-        "event": payload.event,
-        "level": payload.level,
-        "ts": ts_iso,
-        "ts_ms": payload.ts,
-        "received_at": datetime.now(timezone.utc).isoformat(),
-    }
-    print(
-        f"[CHEER_TRIGGER] team={payload.team} event={payload.event} "
-        f"level={payload.level} ts={ts_iso}"
-    )
-    push_log_event("CHEER_TRIGGER", log_payload)
-
-    return {"status": "received"}
+    _reset_gauges()
 
 
 @app.post("/add_point", summary="センサからポイントを追加")
-async def add_point(data: InputData):
-    """入力側のラズパイZeroからイベント報告を受け取り，ゲームロジックを処理"""
-    global game_state
-
+async def add_point(data: InputData) -> dict[str, str]:
     point = convert_to_point(data.source, data.value)
 
-    gauge_key = f"team_{data.team}_gauge"
-    if gauge_key in game_state:
-        game_state[gauge_key] += point
+    if data.team == "a":
+        game_state["team_a_gauge"] += point
+    else:
+        game_state["team_b_gauge"] += point
 
-    print(
-        f"Team A: {game_state['team_a_gauge']:.1f} | Team B: {game_state['team_b_gauge']:.1f}"
+    logger.info(
+        "Team A: %.1f | Team B: %.1f",
+        game_state["team_a_gauge"],
+        game_state["team_b_gauge"],
     )
 
     current_time = time.time()
     is_cooldown = (current_time - game_state["last_win_time"]) < COOLDOWN_SECONDS
 
     if not is_cooldown:
-        winner = None
         if game_state["team_a_gauge"] >= WINNING_THRESHOLD:
-            winner = "team_a"
+            await handle_victory("team_a")
         elif game_state["team_b_gauge"] >= WINNING_THRESHOLD:
-            winner = "team_b"
-
-        if winner:
-            handle_victory(winner)
+            await handle_victory("team_b")
 
     return {"status": "success"}
 
 
 @app.get("/status", summary="現在のゲージ状況を取得")
-async def get_status():
-    """現在の両チームのゲージ状況を返却．観客席のUI表示などに利用可能"""
-    global game_state
-
+async def get_status() -> dict[str, Any]:
     current_time = time.time()
     is_cooldown = (current_time - game_state["last_win_time"]) < COOLDOWN_SECONDS
-
-    if not is_cooldown:
-        game_state["last_winner"] = None
-
-    return {**game_state, "is_cooldown": is_cooldown}
+    # クールダウン終了後は last_winner を返さない（状態は変異させず読み取り時に判断）
+    effective_winner = game_state["last_winner"] if is_cooldown else None
+    return {**game_state, "last_winner": effective_winner, "is_cooldown": is_cooldown}

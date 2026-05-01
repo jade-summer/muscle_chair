@@ -8,12 +8,15 @@ WebSocket経由でクライアントPCにJPEG圧縮映像と角度データを�
 import asyncio
 import base64
 import json
+import logging
 import math
 
 import cv2
 import mediapipe as mp
 import websockets
 from picamera2 import Picamera2
+
+logger = logging.getLogger(__name__)
 
 # --- MediaPipe初期化 ---
 mp_pose = mp.solutions.pose
@@ -48,8 +51,8 @@ def calculate_angle(
     return round(angle, 1)
 
 
-async def handle_communication(websocket):
-    print("PCが接続されました。映像配信とコマンド受信を開始します。")
+async def handle_communication(websocket: websockets.WebSocketServerProtocol) -> None:
+    logger.info("PCが接続されました。映像配信とコマンド受信を開始します。")
     current_mode = "WAITING"
 
     try:
@@ -61,7 +64,7 @@ async def handle_communication(websocket):
                 new_mode = rcv_data.get("mode")
                 if new_mode:
                     current_mode = new_mode
-                    print(f"モード切り替え: {current_mode}")
+                    logger.info("モード切り替え: %s", current_mode)
             except (asyncio.TimeoutError, json.JSONDecodeError):
                 pass
 
@@ -115,15 +118,15 @@ async def handle_communication(websocket):
             await asyncio.sleep(0.03)
 
     except websockets.exceptions.ConnectionClosed:
-        print("PCとの接続が終了しました。")
+        logger.info("PCとの接続が終了しました。")
     finally:
         current_mode = "WAITING"
 
 
-async def main():
+async def main() -> None:
     async with websockets.serve(handle_communication, "0.0.0.0", 8765):
-        print("--- Skeleton Camera WebSocket Server ---")
-        print("ポート 8765 で待機中...")
+        logger.info("--- Skeleton Camera WebSocket Server ---")
+        logger.info("ポート 8765 で待機中...")
         await asyncio.Future()  # 永久待機
 
 
@@ -131,6 +134,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\nサーバーを停止します。")
+        logger.info("サーバーを停止します。")
     finally:
         picam2.stop()

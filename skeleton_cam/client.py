@@ -9,26 +9,29 @@ OpenCVウィンドウに表示しながら筋トレ回数をカウントする�
 import asyncio
 import base64
 import json
+import logging
 
 import cv2
+import httpx
 import numpy as np
-import requests
 import websockets
 
-# --- 設定 ---
-ANGLE_DOWN_THRESHOLD = 100  # この角度を下回ったらダウン判定
-ANGLE_UP_THRESHOLD = 160  # この角度を超えたらアップ判定
+logger = logging.getLogger(__name__)
 
-WEBSOCKET_URI = "ws://xxx.xxx.xxx.xxx:8765"
-BACKEND_URL = "http://127.0.0.1:8000/add_point"
-TEAM = "a"
+# --- 設定 ---
+ANGLE_DOWN_THRESHOLD: int = 100  # この角度を下回ったらダウン判定
+ANGLE_UP_THRESHOLD: int = 160  # この角度を超えたらアップ判定
+
+WEBSOCKET_URI: str = "ws://xxx.xxx.xxx.xxx:8765"
+BACKEND_URL: str = "http://127.0.0.1:8000/add_point"
+TEAM: str = "a"
 
 # --- 状態管理 ---
-app_state = 0  # 0: START画面, 1: モード選択, 2: トレーニング中
-selected_mode = None
+app_state: int = 0  # 0: START画面, 1: モード選択, 2: トレーニング中
+selected_mode: str | None = None
 
 
-def on_mouse_click(event, x, y, flags, param):
+def on_mouse_click(event: int, x: int, y: int, flags: int, param: object) -> None:
     global app_state, selected_mode
     if event != cv2.EVENT_LBUTTONDOWN:
         return
@@ -46,7 +49,7 @@ def on_mouse_click(event, x, y, flags, param):
             app_state = 2
 
 
-async def receive_video():
+async def receive_video() -> None:
     global app_state, selected_mode
 
     counter = 0
@@ -124,21 +127,26 @@ async def receive_video():
                 # 筋トレ判定ロジック
                 if angle < ANGLE_DOWN_THRESHOLD and stage == "UP":
                     stage = "DOWN"
-                    print("DOWN!")
+                    logger.info("DOWN!")
 
                 if angle > ANGLE_UP_THRESHOLD and stage == "DOWN":
                     stage = "UP"
                     counter += 1
-                    print(f"UP! 回数: {counter}")
+                    logger.info("UP! 回数: %d", counter)
 
                     # バックエンドへポイント送信
                     try:
-                        requests.post(
-                            BACKEND_URL,
-                            json={"source": "pushup_sensor", "value": 1, "team": TEAM},
-                            timeout=0.5,
-                        )
-                    except requests.RequestException:
+                        async with httpx.AsyncClient() as client:
+                            await client.post(
+                                BACKEND_URL,
+                                json={
+                                    "source": "pushup_sensor",
+                                    "value": 1,
+                                    "team": TEAM,
+                                },
+                                timeout=0.5,
+                            )
+                    except httpx.RequestError:
                         pass  # 送信失敗は無視（ゲームの継続を優先）
 
                 # HUD表示
