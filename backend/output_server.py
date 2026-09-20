@@ -57,6 +57,9 @@ async def receive_trigger_from_main_server(data: WinnerData) -> dict[str, str]:
         return {"status": "error", "message": error_message}
 
     except subprocess.CalledProcessError as e:
-        error_message = f"【エラー】JavaScriptの実行中にエラーが発生しました (終了コード: {e.returncode})"
+        error_message = (
+            "【エラー】JavaScriptの実行中にエラーが発生しました "
+            f"(終了コード: {e.returncode})"
+        )
         logger.error("%s", error_message)
         return {"status": "error", "message": error_message}
