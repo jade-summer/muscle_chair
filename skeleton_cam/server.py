@@ -9,12 +9,13 @@ import asyncio
 import base64
 import json
 import logging
-import math
 
 import cv2
 import mediapipe as mp
 import websockets
 from picamera2 import Picamera2
+
+from skeleton_cam.pose_math import calculate_angle
 
 logger = logging.getLogger(__name__)
 
@@ -38,19 +39,6 @@ picam2.configure(config)
 picam2.start()
 
 
-def calculate_angle(
-    point_a: list[float], point_b: list[float], point_c: list[float]
-) -> float:
-    """3点の座標(x, y)から頂点point_bの角度を算出"""
-    rad = math.atan2(point_c[1] - point_b[1], point_c[0] - point_b[0]) - math.atan2(
-        point_a[1] - point_b[1], point_a[0] - point_b[0]
-    )
-    angle = abs(rad * 180.0 / math.pi)
-    if angle > 180.0:
-        angle = 360 - angle
-    return round(angle, 1)
-
-
 async def handle_communication(websocket: websockets.WebSocketServerProtocol) -> None:
     logger.info("PCが接続されました。映像配信とコマンド受信を開始します。")
     current_mode = "WAITING"
@@ -65,7 +53,7 @@ async def handle_communication(websocket: websockets.WebSocketServerProtocol) ->
                 if new_mode:
                     current_mode = new_mode
                     logger.info("モード切り替え: %s", current_mode)
-            except (asyncio.TimeoutError, json.JSONDecodeError):
+            except (TimeoutError, json.JSONDecodeError):
                 pass
 
             # 2. 映像取得

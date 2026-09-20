@@ -1,0 +1,60 @@
+name: バグ報告
+description: 動作しない・期待と異なる挙動を報告する
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 症状
+      description: 何が起きたかを記述してください
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 対象コンポーネント
+      options:
+        - backend（中央サーバー）
+        - skeleton_cam（骨格検知）
+        - device（GPIO/I2C制御）
+        - web（スコア表示UI）
+        - その他・不明
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 実行環境
+      description: OS、Pythonバージョン、Raspberry Piのモデルなど
+      placeholder: |
+        - デバイス: Raspberry Pi 4 Model B
+        - OS: Raspberry Pi OS (64-bit)
+        - Python: 3.12.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・エラー出力
+      render: shell
