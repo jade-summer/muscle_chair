@@ -1,10 +1,23 @@
 # Muscle Chair
 
 [![Ruff](https://github.com/jade-summer/muscle_chair/actions/workflows/ruff.yml/badge.svg)](https://github.com/jade-summer/muscle_chair/actions/workflows/ruff.yml)
+[![Test](https://github.com/jade-summer/muscle_chair/actions/workflows/test.yml/badge.svg)](https://github.com/jade-summer/muscle_chair/actions/workflows/test.yml)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi-red)](https://www.raspberrypi.com/)
 
 **Web × IoT Makers Challenge PLUS 2025 岡山大会 最優秀賞 / 全国大会 人気投票賞受賞作品**
+
+## 作品写真
+
+| 正面 | 後方 |
+|------|------|
+| <img src="docs/images/chair-front.jpg" alt="Muscle Chair 正面。木製フレームの椅子の両側にLEDテープが取り付けられている" width="380"> | <img src="docs/images/chair-back.jpg" alt="Muscle Chair 後方。背面にRaspberry Pi Zeroが3台と配線が並ぶ" width="380"> |
+| 椅子の両側面にLEDテープ、上部にスピーカーとカメラを配置 | 背面に出力制御用のRaspberry Pi Zeroと配線を集約 |
+
+| 勝利演出デバイス |
+|-----------------|
+| <img src="docs/images/balloon-device.jpg" alt="ポンプで膨らませた筋肉を模した風船。かごに収めたファンから送風する" width="380"> |
+| 勝利時にファンで膨らむ筋肉風船 |
 
 ## 概要
 
@@ -73,6 +86,7 @@ muscle_chair/
 ├── skeleton_cam/            # 骨格検知モジュール（Pi Camera）
 │   ├── server.py            # WebSocketサーバー（Pi側・骨格検出）
 │   ├── client.py            # WebSocketクライアント（PC側・回数カウント）
+│   ├── pose_math.py         # 関節角度の計算（ハードウェア非依存）
 │   ├── requirements-server.txt # Python依存関係（Raspberry Pi）
 │   ├── requirements-client.txt # Python依存関係（PC）
 │   └── README.md            # モジュール詳細ドキュメント
@@ -107,6 +121,16 @@ muscle_chair/
 ├── systemd/                 # systemdサービス定義
 │   └── muscle_chair.service # 自動起動用サービスファイル
 │
+├── tests/                   # テスト（実機非依存のロジックのみ）
+│   ├── test_backend_main.py # ゲームロジックのテスト
+│   └── test_pose_math.py    # 関節角度計算のテスト
+│
+├── docs/images/             # README掲載用の作品写真
+│
+├── pyproject.toml           # Ruff / pytest の設定
+├── requirements-dev.txt     # 開発用依存関係
+├── CONTRIBUTING.md          # コントリビューションガイド
+├── SECURITY.md              # セキュリティポリシー
 └── README.md                # このファイル
 ```
 
@@ -126,11 +150,11 @@ muscle_chair/
 **Python (Backend/Edge)**
 | ライブラリ | バージョン | 用途 |
 |-----------|-----------|------|
-| fastapi | - | Web API フレームワーク |
-| uvicorn | - | ASGI サーバー |
-| pydantic | - | データバリデーション |
+| fastapi | >=0.111.0 | Web API フレームワーク |
+| uvicorn[standard] | >=0.29.0 | ASGI サーバー |
+| pydantic | >=2.0.0 | データバリデーション |
+| httpx | >=0.27.0 | 非同期HTTPクライアント（出力デバイスへの命令送信） |
 | numpy | >=1.24.0 | 数値計算（skeleton_cam 映像処理） |
-| requests | >=2.31.0 | HTTP クライアント |
 | mediapipe | >=0.10.0 | 骨格検出（skeleton_cam） |
 | websockets | >=12.0 | WebSocketストリーミング（skeleton_cam） |
 | opencv-python | >=4.8.0 | 映像処理・GUI（skeleton_cam client） |
@@ -164,13 +188,17 @@ muscle_chair/
 - **出力デバイス**: Raspberry Pi Zero
 - **ネットワーク**: 同一LAN内で各デバイスが通信可能であること
 
-> **注意**: 本システムは同一LAN内での使用を前提としており、認証機能は実装していません。
+> [!WARNING]
+> 本システムは閉じたLAN環境での使用を前提としており、認証機能を実装していません。
+> とくに `backend/output_server.py` は、リクエストの受信をトリガーに `sudo` で
+> Node.jsスクリプトを実行します。インターネットから到達できる場所に配置しないでください。
+> 詳細は [SECURITY.md](SECURITY.md) を参照してください。
 
 ### 中央サーバー（Backend）のセットアップ
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-org/muscle_chair.git
+git clone https://github.com/jade-summer/muscle_chair.git
 cd muscle_chair
 
 # Python仮想環境を作成
@@ -286,6 +314,24 @@ uvicorn fake_output_server:app --port 8001
 
 1. **Web UI確認**: ゲージがリアルタイムで更新される
 2. **勝利演出確認**: ゲージが100に達すると演出が実行される
+
+## 開発
+
+実機がなくても、`backend/` のロジックとテストはPC上で確認できます。
+
+```bash
+# 開発用依存関係をインストール
+pip install -r requirements-dev.txt
+
+# lint とフォーマット確認（CIと同じチェック）
+ruff check .
+ruff format --check .
+
+# テストを実行
+pytest
+```
+
+コントリビューションの手順は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ## ライセンス
 
