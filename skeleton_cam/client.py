@@ -26,6 +26,12 @@ WEBSOCKET_URI: str = "ws://xxx.xxx.xxx.xxx:8765"
 BACKEND_URL: str = "http://127.0.0.1:8000/add_point"
 TEAM: str = "a"
 
+# バックエンドの POINT_MAPPING のキーと対応させること
+SOURCE_BY_MODE: dict[str, str] = {
+    "Squat": "squat_sensor",
+    "Push-up": "pushup_sensor",
+}
+
 # --- 状態管理 ---
 app_state: int = 0  # 0: START画面, 1: モード選択, 2: トレーニング中
 selected_mode: str | None = None
@@ -140,7 +146,7 @@ async def receive_video() -> None:
                             await client.post(
                                 BACKEND_URL,
                                 json={
-                                    "source": "pushup_sensor",
+                                    "source": SOURCE_BY_MODE[selected_mode],
                                     "value": 1,
                                     "team": TEAM,
                                 },

@@ -97,6 +97,8 @@ POST /add_point
 }
 ```
 
+`source` は選択中のモードに対応します（スクワットは `squat_sensor`、プッシュアップは `pushup_sensor`）。対応表は `client.py` の `SOURCE_BY_MODE` にあり、バックエンドの `POINT_MAPPING` のキーと一致させる必要があります。
+
 チームやバックエンド URL を変更する場合は、`client.py` 冒頭の定数を編集する。
 
 ```python
