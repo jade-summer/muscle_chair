@@ -8,11 +8,13 @@ Muscle Chair - 中央コントローラー
 import asyncio
 import logging
 import time
+from pathlib import Path
 from typing import Any, Literal, TypedDict
 
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -38,9 +40,12 @@ WINNING_THRESHOLD: int = 100
 COOLDOWN_SECONDS: int = 10
 POINT_MAPPING: dict[str, float] = {
     "pushup_sensor": 10.0,
+    "squat_sensor": 10.0,
     "bicycle_sensor": 0.5,
     "gps_run": 0.2,
 }
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 
 class InputData(BaseModel):
@@ -146,3 +151,7 @@ async def get_status() -> dict[str, Any]:
     # クールダウン終了後は last_winner を返さない（状態は変異させず読み取り時に判断）
     effective_winner = game_state["last_winner"] if is_cooldown else None
     return {**game_state, "last_winner": effective_winner, "is_cooldown": is_cooldown}
+
+
+# 観客向けUIを同一オリジンで配信する。APIルートより後にマウントすること
+app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

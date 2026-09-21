@@ -258,6 +258,12 @@ sudo systemctl start muscle_chair
 
 ### 設定項目
 
+**backend/output_server.py の主要設定**
+```python
+# このラズパイが担当する演出スクリプト（リポジトリルートからの相対パス）
+JAVASCRIPT_SCRIPT_PATH = "device/output/led/output_led.js"
+```
+
 **backend/main.py の主要設定**
 ```python
 # 出力モード切り替え
@@ -297,8 +303,8 @@ COOLDOWN_SECONDS = 10    # 勝利後のクールダウン時間
    ```
 
 4. **Web UIを開く**
-   - ブラウザで `http://<サーバーIP>:8000/` にアクセス
-   - または `web/index.html` を直接開く場合は、ファイル内の `API_URL` をサーバーのIPアドレスに合わせて変更してください
+   - ブラウザで `http://<サーバーIP>:8000/` にアクセス（中央サーバーが `web/` を配信します）
+   - `web/index.html` をファイルとして直接開くこともできます。その場合のみ、ファイル内の `BACKEND_ORIGIN` にサーバーのURLを指定してください
 
 ### デバッグモード
 

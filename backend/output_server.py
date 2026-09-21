@@ -10,6 +10,7 @@ LED担当、モーター担当など、どの役割にも対応できます。
 
 import logging
 import subprocess
+from pathlib import Path
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -17,10 +18,14 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # --- 設定項目 ---
-# このラズパイが担当する、実行部隊のJavaScriptファイル名を設定します。
-# 例: "output_led.js", "output_motor.js", "output_speaker.js", "output_balloon.js"
-# デプロイ時に担当デバイスのスクリプト名に変更すること
-JAVASCRIPT_SCRIPT_NAME: str = "output_led.js"
+# このラズパイが担当する、実行部隊のJavaScriptファイルを設定します。
+# 例: "device/output/motor/output_motor.js", "device/output/speaker/output_speaker.js"
+# デプロイ時に担当デバイスのスクリプトに変更すること
+JAVASCRIPT_SCRIPT_PATH: str = "device/output/led/output_led.js"
+
+# 起動時のカレントディレクトリに依存しないよう、リポジトリルートを基準に解決する
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
+script_path = REPOSITORY_ROOT / JAVASCRIPT_SCRIPT_PATH
 
 VALID_WINNERS: frozenset[str] = frozenset({"team_a", "team_b", "default"})
 
@@ -39,13 +44,13 @@ app = FastAPI(
 async def receive_trigger_from_main_server(data: WinnerData) -> dict[str, str]:
     winner_team = data.winner if data.winner in VALID_WINNERS else "default"
     logger.info("[Python] 中央サーバーから命令受信！ 勝者: %s", winner_team)
-    logger.info("[Python] 実行部隊 (%s) を呼び出します...", JAVASCRIPT_SCRIPT_NAME)
+    logger.info("[Python] 実行部隊 (%s) を呼び出します...", script_path)
 
-    command = ["sudo", "node", JAVASCRIPT_SCRIPT_NAME, winner_team]
+    command = ["sudo", "node", str(script_path), winner_team]
 
     try:
         subprocess.run(command, check=True, text=True)
-        logger.info("[Python] %s の実行が完了しました。", JAVASCRIPT_SCRIPT_NAME)
+        logger.info("[Python] %s の実行が完了しました。", script_path)
         return {"status": "ok"}
 
     except FileNotFoundError:

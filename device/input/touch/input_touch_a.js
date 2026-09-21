@@ -56,15 +56,19 @@ async function sendEventToServer() {
 }
 
 /**
- * GPIOのonchangeイベントハンドラ。タッチされた瞬間（値が1になった時）にのみ反応します。
- * @param {{value: 0 | 1}} event - GPIOポートから渡されるイベントオブジェクト
+ * GPIOのonchangeイベントハンドラを生成します。
+ * @param {Function} onTouch - タッチされた瞬間に呼び出す関数
+ * @returns {Function} onchangeに設定するハンドラ
  */
-function handleTouchEvent(event) {
-    // タッチセンサーは、押した瞬間(1)と離した瞬間(0)の両方でイベントが発生するため、
-    // 「押した瞬間」のイベントのみを処理の対象とします。
-    if (event.value === 1) {
-        sendEventToServer();
-    }
+function createTouchEventHandler(onTouch) {
+    // タッチセンサーは、押した瞬間(1)と離した瞬間(0)の両方でイベントが発生する。
+    // 離した瞬間のイベントをデバウンサに渡すと、実際には送信していないのに
+    // クールダウンが更新され、次のタッチが不必要にブロックされてしまう。
+    return function (event) {
+        if (event.value === 1) {
+            onTouch();
+        }
+    };
 }
 
 /**
@@ -103,11 +107,9 @@ async function main() {
     const port = gpioAccess.ports.get(CONFIG.SENSOR_PIN);
     await port.export("in");
     
-    // クールダウン機能付きのイベントハンドラを作成
-    const debouncedTouchHandler = createDebouncedHandler(handleTouchEvent, CONFIG.COOLDOWN_MS);
-
-    // ピンの状態が変化するたびに、クールダウン機能付きのハンドラを呼び出す
-    port.onchange = debouncedTouchHandler;
+    // 「押した瞬間」だけをデバウンサに通す
+    const debouncedSend = createDebouncedHandler(sendEventToServer, CONFIG.COOLDOWN_MS);
+    port.onchange = createTouchEventHandler(debouncedSend);
 
     console.log(`GPIO ${CONFIG.SENSOR_PIN}番ピンを監視中... Ctrl+Cで終了します。`);
 }
