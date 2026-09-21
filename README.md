@@ -40,28 +40,7 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 
 ### 全体構成図
 
-```
-┌──────────────────────────┐
-│    トレーニングエリア      │
-│ （カメラ＋選手の前に設置） │
-└──────────┬───────────────┘
-           │ 映像（WebSocket）
-           ▼
-┌─────────────────────────┐
-│ Raspberry Pi Zero 2 W   │
-│ (skeleton_cam)          │
-│ + Pi Camera             │
-└──────────┬──────────────┘
-           │ WebSocket(8765)
-           │
-           │ HTTP POST /add_point
-           ▼ (骨格検知→回数カウント)
-┌────────────────────────────────────────────┐
-│              Raspberry Pi 4                │
-│              (backend/main.py)             │
-│          ゲームロジック・スコア管理          │
-└────────────────────────────────────────────┘
-```
+![Muscle Chair システム構成図。Raspberry Pi Zero 2 WとPCがWebSocketで接続され、タッチセンサーとあわせてRaspberry Pi 4へHTTPでポイントを報告する。Pi 4は勝利判定後に4台の出力用Raspberry Pi Zeroへ一斉に命令を送信する](docs/diagrams/architecture.svg)
 
 ### 各層の役割
 
@@ -74,10 +53,7 @@ Muscle Chair（マッスルチェア）は、観客の応援を「見える化�
 
 ### データフロー
 
-```
-カメラ映像 → 骨格検出 → 関節角度計算 → 回数カウント → HTTP POST → バックエンド
-    → ポイント加算 → 勝利判定 → 出力デバイスへ一斉送信 → 物理演出
-```
+![Muscle Chair データフロー。カメラ映像が骨格検出と関節角度の算出を経てWebSocketでPCへ渡り、回数カウントの結果がHTTPでRaspberry Pi 4へ送られる。Pi 4はポイント換算とゲージ加算を行い、勝利判定後に出力側へ物理演出の命令を送る](docs/diagrams/data-flow.svg)
 
 ## ディレクトリ構成
 
@@ -125,7 +101,9 @@ muscle_chair/
 │   ├── test_backend_main.py # ゲームロジックのテスト
 │   └── test_pose_math.py    # 関節角度計算のテスト
 │
-├── docs/images/             # README掲載用の作品写真
+├── docs/
+│   ├── images/              # README掲載用の作品写真
+│   └── diagrams/            # 構成図・配線図（SVG）
 │
 ├── pyproject.toml           # Ruff / pytest の設定
 ├── requirements-dev.txt     # 開発用依存関係
@@ -178,6 +156,10 @@ muscle_chair/
 | SG90 サーボモーター | 椅子アーム駆動 | - |
 | PCA9685 | I2Cサーボドライバー | - |
 | LED、リレー、ファン等 | 各種演出用 | - |
+
+### 配線
+
+![Muscle Chair デバイス配線図。入力側ではタッチセンサーがGPIO 5に接続される。出力側はモーター担当のPiがI2C経由でPCA9685とSG90サーボを駆動し、LED・スピーカー・ファンの3台はいずれもGPIO 26で接続されている](docs/diagrams/wiring.svg)
 
 ## セットアップ
 

@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 660" width="880" height="660" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', Meiryo, sans-serif">
+  <title id="title">Muscle Chair データフロー</title>
+  <desc id="desc">カメラ映像が骨格検出と関節角度の算出を経てWebSocketでPCへ渡り、回数カウントの結果がHTTPでRaspberry Pi 4へ送られる。Pi 4はポイント換算とゲージ加算を行い、勝利判定後に出力側へ物理演出の命令を送る。</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrow-net" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0969da"/>
+    </marker>
+  </defs>
+
+  <rect width="880" height="660" fill="#ffffff"/>
+
+  <!-- 実行するマシン -->
+  <rect x="30" y="40" width="200" height="238" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="130" y="152" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1f2328">Raspberry Pi Zero 2 W</text>
+  <text x="130" y="172" text-anchor="middle" font-size="11" fill="#57606a">エッジ処理</text>
+
+  <rect x="30" y="304" width="200" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="130" y="329" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1f2328">PC</text>
+  <text x="130" y="348" text-anchor="middle" font-size="11" fill="#57606a">判定・送信</text>
+
+  <rect x="30" y="392" width="200" height="150" rx="8" fill="#ddf4ff" stroke="#218bff"/>
+  <text x="130" y="460" text-anchor="middle" font-size="12.5" font-weight="600" fill="#0a3069">Raspberry Pi 4</text>
+  <text x="130" y="479" text-anchor="middle" font-size="11" fill="#0a3069">中央コントローラー</text>
+
+  <rect x="30" y="568" width="200" height="62" rx="8" fill="#fff4ec" stroke="#e8936c"/>
+  <text x="130" y="592" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1f2328">出力側 Pi Zero</text>
+  <text x="130" y="611" text-anchor="middle" font-size="11" fill="#57606a">×4台</text>
+
+  <!-- 処理段 -->
+  <rect x="270" y="40" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="66" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">カメラ映像の取得</text>
+  <text x="495" y="86" text-anchor="middle" font-size="11" fill="#57606a">Picamera2 — RGB888 / 540×750</text>
+
+  <line x1="340" y1="102" x2="340" y2="122" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="356" y="119" font-size="11" fill="#57606a">RGB画像</text>
+
+  <rect x="270" y="128" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="154" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">骨格検出</text>
+  <text x="495" y="174" text-anchor="middle" font-size="11" fill="#57606a">MediaPipe Pose（model_complexity = 0）</text>
+
+  <line x1="340" y1="190" x2="340" y2="210" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="356" y="207" font-size="11" fill="#57606a">ランドマーク座標</text>
+
+  <rect x="270" y="216" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="242" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">関節角度の算出</text>
+  <text x="495" y="262" text-anchor="middle" font-size="11" fill="#57606a">calculate_angle() — 3点の座標から頂点の角度を求める</text>
+
+  <line x1="340" y1="278" x2="340" y2="298" stroke="#0969da" stroke-width="1.8" marker-end="url(#arrow-net)"/>
+  <text x="356" y="295" font-size="11" font-weight="600" fill="#0969da">WebSocket :8765 — JPEG映像 + 角度</text>
+
+  <rect x="270" y="304" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="330" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">回数カウント</text>
+  <text x="495" y="350" text-anchor="middle" font-size="11" fill="#57606a">100°未満で DOWN、160°超で UP に戻った時点で +1</text>
+
+  <line x1="340" y1="366" x2="340" y2="386" stroke="#0969da" stroke-width="1.8" marker-end="url(#arrow-net)"/>
+  <text x="356" y="383" font-size="11" font-weight="600" fill="#0969da">HTTP POST /add_point — source / value / team</text>
+
+  <rect x="270" y="392" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="418" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">ポイント換算</text>
+  <text x="495" y="438" text-anchor="middle" font-size="11" fill="#57606a">POINT_MAPPING[source] × value</text>
+
+  <line x1="340" y1="454" x2="340" y2="474" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="356" y="471" font-size="11" fill="#57606a">ポイント</text>
+
+  <rect x="270" y="480" width="450" height="62" rx="8" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="495" y="506" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">ゲージ加算と勝利判定</text>
+  <text x="495" y="526" text-anchor="middle" font-size="11" fill="#57606a">100点到達で勝者を確定し、ゲージをリセット</text>
+
+  <line x1="340" y1="542" x2="340" y2="562" stroke="#0969da" stroke-width="1.8" marker-end="url(#arrow-net)"/>
+  <text x="356" y="559" font-size="11" font-weight="600" fill="#0969da">HTTP POST /trigger_action — winner</text>
+
+  <rect x="270" y="568" width="450" height="62" rx="8" fill="#fff4ec" stroke="#e8936c"/>
+  <text x="495" y="594" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2328">物理演出の実行</text>
+  <text x="495" y="614" text-anchor="middle" font-size="11" fill="#57606a">モーター・LED・スピーカー・風船を一斉に駆動</text>
+
+  <text x="30" y="650" font-size="11" fill="#57606a">青い矢印はネットワークをまたぐ通信を示す</text>
+</svg>
