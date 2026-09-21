@@ -135,7 +135,11 @@
 
     <script>
         // --- 設定項目 ---
-        const API_URL = "http://127.0.0.1:8000/status"; 
+        // バックエンドから配信される場合は同一オリジンで解決される。
+        // このファイルをブラウザで直接開く場合のみ、サーバーのURLを指定すること
+        // 例: const BACKEND_ORIGIN = "http://192.168.0.10:8000";
+        const BACKEND_ORIGIN = "";
+        const API_URL = `${BACKEND_ORIGIN}/status`;
         const WINNING_THRESHOLD = 100;
 
         // --- HTML要素の取得 ---
