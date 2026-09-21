@@ -30,6 +30,19 @@ def test_converts_unknown_source_to_zero():
     assert main.convert_to_point("unknown_sensor", 100) == 0.0
 
 
+def test_squat_and_pushup_are_both_scored():
+    # client.py の SOURCE_BY_MODE が送る source と対応していること
+    assert main.convert_to_point("squat_sensor", 1) > 0
+    assert main.convert_to_point("pushup_sensor", 1) > 0
+
+
+def test_serves_the_spectator_ui_at_the_root(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Muscle Chair" in response.text
+
+
 def test_add_point_accumulates_into_the_reporting_team(client):
     client.post("/add_point", json={"source": "pushup_sensor", "value": 2, "team": "a"})
 
